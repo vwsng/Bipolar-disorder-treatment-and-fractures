@@ -1,0 +1,5555 @@
+libname f "E:\BPD_UK_fracture\Analysis";
+/**********step 1: import raw data using SAS built-in function****************************************/;
+/****1.bpd_cohort_raw (i.e. defined by readcodes of bipolar disorder)
+    2.bpd_cohort_demo_raw 
+    3.bpd_cohort_consult_raw
+    4.bpd_all_dx_raw 
+    5.bpd_all_rx_raw *********/;
+
+/**********step 2: map the description of readcodes and drugcodes*********/;
+
+proc sql;
+create table bpd_cohort_demo as
+select * from f.bpd_cohort_demo_raw a left join (select compdate,visiondate,amr,collectdate,country,dataflag,description,status from f.pracefile_ref b)
+on a.pracid=b.pracid;
+quit;
+
+data f.bpd_cohort_demo;
+set bpd_cohort_demo;
+run;
+
+data f.bpd_cohort;
+set f.bpd_cohort_raw;
+dxdate=input(eventdate,yymmdd10.);
+sysdate1=input(sysdate,yymmdd10.);
+format dxdate sysdate1 date9.;
+run;
+
+proc sort data=f.bpd_cohort;
+by id;
+run;
+
+data f.bpd_cohort_demo;
+set f.bpd_cohort_demo;
+regdate1=input(regdate,yymmdd10.);
+xferdate1=input(xferdate,yymmdd10.);
+deathdate1=input(deathdate,yymmdd10.);
+compdate1=input(compdate,ddmmyy10.);
+visiondate1=input(visiondate,ddmmyy10.);
+amr1=input(amr,ddmmyy10.);
+sysdate1=input(sysdate,yymmdd10.);
+collectdate1=input(collectdate,ddmmyy10.);
+format regdate1 xferdate1 deathdate1 compdate1 visiondate1 amr1 sysdate1 collectdate1 date9.;
+run;
+
+data f.bpd_cohort_demo;
+set f.bpd_cohort_demo;
+yob1=substr(yob,1,4);
+run;
+
+data f.bpd_cohort_demo;
+retain pracid patid id patflag yob yob1 famnum sex regdate regdate1 regstat xferdate xferdate1 regrea deathdate deathdate1 deathinfo accept institute marital dispensing prscexempt sysdate sysdate1 compdate compdate1 visiondate visiondate1 amr amr1 collectdate collectdate1 country dataflag description status;  
+set f.bpd_cohort_demo;
+run;
+
+data f.bpd_cohort_demo;
+set f.bpd_cohort_demo;
+drop yob regdate xferdate deathdate sysdate compdate visiondate amr collectdate;
+run;
+
+data f.bpd_cohort_demo;
+set f.bpd_cohort_demo;
+rename regdate1=regdate;
+rename xferdate1=xferdate;
+rename deathdate1=deathdate;
+rename sysdate1=sysdate;
+rename compdate1=compdate;
+rename visiondate1=visiondate;
+rename amr1=amr;
+rename collectdate1=collectdate;
+run;
+
+data f.bpd_cohort_demo;
+set f.bpd_cohort_demo;
+drop VAR1;
+run;
+
+data f.bpd_cohort_demo;
+set f.bpd_cohort_demo;
+lc1=regdate;
+lc2=max(regdate,compdate,amr);
+lc3=max(regdate,compdate,amr,visiondate);
+format lc1 lc2 lc3 date9.;
+run;
+
+data f.bpd_all_dx;
+set f.bpd_all_dx;
+eventdate1=input(eventdate,yymmdd10.);
+sysdate1=input(sysdate,yymmdd10.);
+format eventdate1 sysdate1 date9.;
+run;
+
+data f.bpd_all_dx;
+retain pracid patid id eventdate eventdate1 medcode description medflag episode source locate category priority medinfo inprac private nhsspec medid consultid sysdate sysdate1 modified enddate datatype staffid textid; 
+set f.bpd_all_dx;
+run;
+
+data f.bpd_all_dx;
+set f.bpd_all_dx;
+drop eventdate sysdate;
+run;
+
+data f.bpd_all_dx;
+set f.bpd_all_dx;
+rename eventdate1=eventdate;
+rename sysdate1=sysdate;
+run;
+
+data f.bpd_all_dx;
+set f.bpd_all_dx;
+drop sysdate;
+run;
+
+proc sql;
+create table bpd_all_dx as
+select a.*, b.patflag, b.yob1, b.famnum, b.sex, b.regdate, b.regstat, b.xferdate, b.regrea, b.deathdate, b.deathinfo, b.accept, b.institute, b.marital, b.dispensing, b.prscexempt, b.sysdate, b.compdate, b.visiondate, b.amr, b.collectdate, b.country, b.dataflag, b.status, b.lc1, b.lc2,b.lc3
+from f.bpd_all_dx a, f.bpd_cohort_demo b 
+where a.id=b.id;
+quit;
+
+data f.bpd_all_dx;
+set bpd_all_dx;
+run;
+
+proc sort data=f.bpd_all_dx;
+by id eventdate;
+run;
+
+data f.bpd_all_rx;
+set f.bpd_all_rx;
+prscdate1=input(prscdate,yymmdd10.);
+sysdate1=input(sysdate,yymmdd10.);
+format prscdate1 sysdate1 date9.;
+run;
+
+data f.bpd_all_rx;
+set f.bpd_all_rx;
+drop prscdate sysdate;
+run;
+
+data f.bpd_all_rx;
+set f.bpd_all_rx;
+rename prscdate1=prscdate;
+rename sysdate1=sysdate;
+run;
+
+data f.bpd_all_rx;
+set f.bpd_all_rx;
+drop sysdate;
+run;
+
+proc sql;
+create table bpd_all_rx as
+select a.*, b.patflag, b.yob1, b.famnum, b.sex, b.regdate, b.regstat, b.xferdate, b.regrea, b.deathdate, b.deathinfo, b.accept, b.institute, b.marital, b.dispensing, b.prscexempt, b.sysdate, b.compdate, b.visiondate, b.amr, b.collectdate, b.country, b.dataflag, b.status, b.lc1, b.lc2,b.lc3
+from f.bpd_all_rx a, f.bpd_cohort_demo b 
+where a.id=b.id;
+quit;
+
+data f.bpd_all_rx;
+set bpd_all_rx;
+run;
+
+/*************************step 3: define BPD cohort************************/;
+
+data f.bpd_cohort;
+set f.bpd_cohort;
+if patflag='A' or patflag='C';
+run; 
+
+proc sort data=f.bpd_cohort nodupkeys out=h;
+by id;
+run;
+
+data f.bpd_cohort;
+set f.bpd_cohort;
+if missing(dxdate) then delete;
+run; 
+
+
+data f.bpd_cohort_9319;
+set f.bpd_cohort;
+if 1993<=year(dxdate)<=2019;
+run; 
+
+proc sort data=f.bpd_cohort_9319;
+by id descending dxdate;
+run;
+
+proc sort data=f.bpd_cohort_9319 nodupkeys out=f.bpd_cohort_9319_h;
+by id;
+run;
+
+/******1. exlcusion criteria: schizophrenia dx after the latest bipolar disorder dx******/;
+
+proc sql;
+create table f.bpd_cohort_scz_dx as
+select * from f.bpd_all_dx
+where medcode in (select medcode from f.readcode_scz);
+quit; 
+
+proc sort data=f.bpd_cohort_scz_dx;
+by id eventdate;
+run;
+
+data f.bpd_cohort_scz_dx_9319;
+set f.bpd_cohort_scz_dx;
+if 1993<=year(eventdate)<=2019;
+run;
+
+proc freq data=f.bpd_cohort_scz_dx_9319;
+table eventdate;
+run;
+
+proc sql;
+create table bpd_cohort_scz_dx_9319 as
+select a.*, b.eventdate
+from f.bpd_cohort_9319_h a, f.bpd_cohort_scz_dx_9319 b
+where a.id=b.id;
+quit;
+
+data f.bpd_b4_scz;
+set bpd_cohort_scz_dx_9319;
+if eventdate>=dxdate;
+run; 
+
+proc sql;
+create table f.bpd_cohort_clean as
+select * from f.bpd_cohort_new_9319
+where id not in (select id from f.bpd_b4_scz);
+quit; 
+
+proc sort data=f.bpd_cohort_clean;
+by id dxdate;
+run;
+
+proc sort data=f.bpd_cohort_clean nodupkeys out=f.bpd_cohort_head;
+by id;
+run; 
+
+/*******2. exclusion criteria: age<18*********/;
+data f.bpd_cohort_head;
+set f.bpd_cohort_head;
+age=year(dxdate)-yob1;
+run;
+
+data f.bpd_cohort_x18_head;
+set f.bpd_cohort_head;
+if age<18;
+run; 
+
+data f.bpd_cohort_18_head;
+set f.bpd_cohort_head;
+if age>=18;
+run; 
+
+/*****define left-censored=regdate+365 as obs start******/;
+data f.bpd_cohort_18_head;
+set f.bpd_cohort_18_head;
+lc=regdate+365;
+format lc date9.;
+run;
+
+proc freq data=f.bpd_cohort_18_head;
+table lc;
+run;
+
+proc sql;
+create table f.bpd_cohort_all_rx as
+select * from f.bpd_all_rx 
+where id in (select id from f.bpd_cohort_18_head);
+quit; 
+
+proc sql;
+create table f.bpd_cohort_ms_rx as
+select * from f.bpd_cohort_all_rx
+where drugcode in (select drugcode from f.drugcode_ms);
+quit; 
+
+proc sort data=f.bpd_cohort_ms_rx nodupkeys out=h;
+by id;
+run; 
+
+data f.bpd_cohort_ms_rx_9319;
+set f.bpd_cohort_ms_rx;
+if 1993<=year(prscdate)<=2019;
+run; 
+
+proc sort data=f.bpd_cohort_ms_rx_9319 nodupkeys out=f.bpd_cohort_ms_heads;
+by id;
+run; 
+
+proc sql;
+create table f.bpd_cohort_li_rx_9319 as 
+select * from f.bpd_cohort_ms_rx_9319
+where drugcode in (select drugcode from f.drugcode_lith);
+quit; 
+
+data f.bpd_cohort_li_rx_9319;
+set f.bpd_cohort_li_rx_9319;
+quantity=put(prscqty,10.);
+dose=put(dosgval,7.);
+run;
+
+data f.bpd_cohort_li_rx_9319;
+set f.bpd_cohort_li_rx_9319;
+dur=quantity/dose;
+run;
+
+
+data f.bpd_cohort_li_rx_9319;
+set f.bpd_cohort_li_rx_9319;
+dur_ceil=ceil(dur);
+run;
+
+data f.bpd_cohort_li_rx_9319;
+set f.bpd_cohort_li_rx_9319;
+if dur_ceil<=0 then dur_ceil=.;
+run;
+
+proc means data=f.bpd_cohort_li_rx_9319;
+class drugcode;
+var dur_ceil;
+output out=d q1=q1 Median=q2 q3=q3;
+run;
+
+proc sql;
+create table bpd_cohort_li_rx_9319 as
+select a.*, b.q2 
+from f.bpd_cohort_li_rx_9319 a left join d b
+on a.drugcode=b.drugcode;
+quit;
+
+data bpd_cohort_li_rx_9319;
+set bpd_cohort_li_rx_9319;
+if q2=. then q2=28;
+run;
+
+data f.bpd_cohort_li_rx_9319;
+set bpd_cohort_li_rx_9319;
+if dur_ceil=. then dur_ceil=q2;
+run;
+
+data f.bpd_cohort_li_rx_9319;
+set f.bpd_cohort_li_rx_9319;
+prscend=prscdate+dur_ceil-1;
+format prscend date9.;
+run;
+
+proc sort data=f.bpd_cohort_li_rx_9319;
+by id prscdate;
+run;
+
+proc sql;
+create table f.bpd_cohort_ap_rx_9319 as
+select * from f.bpd_cohort_ms_rx_9319 
+where drugcode in (select drugcode from f.drugcode_ap);
+quit; 
+
+data f.bpd_cohort_ap_rx_9319;
+set f.bpd_cohort_ap_rx_9319;
+quantity=put(prscqty,10.);
+dose=put(dosgval,7.);
+run;
+
+data f.bpd_cohort_ap_rx_9319;
+set f.bpd_cohort_ap_rx_9319;
+dur=quantity/dose;
+run;
+
+data f.bpd_cohort_ap_rx_9319;
+set f.bpd_cohort_ap_rx_9319;
+dur_ceil=ceil(dur);
+run;
+
+data f.bpd_cohort_ap_rx_9319;
+set f.bpd_cohort_ap_rx_9319;
+if dur_ceil<=0 then dur_ceil=.;
+run;
+
+proc means data=f.bpd_cohort_ap_rx_9319;
+class drugcode;
+var dur_ceil;
+output out=d q1=q1 Median=q2 q3=q3;
+run;
+
+proc sql;
+create table bpd_cohort_ap_rx_9319 as
+select a.*, b.q2 
+from f.bpd_cohort_ap_rx_9319 a left join d b
+on a.drugcode=b.drugcode;
+quit;
+
+data bpd_cohort_ap_rx_9319;
+set bpd_cohort_ap_rx_9319;
+if q2=. then q2=28;
+run;
+
+data f.bpd_cohort_ap_rx_9319;
+set bpd_cohort_ap_rx_9319;
+if dur_ceil=. then dur_ceil=q2;
+run;
+
+data f.bpd_cohort_ap_rx_9319;
+set f.bpd_cohort_ap_rx_9319;
+prscend=prscdate+dur_ceil-1;
+format prscend date9.;
+run;
+
+proc sort data=f.bpd_cohort_ap_rx_9319;
+by id prscdate prscend;
+run;
+
+proc sql;
+create table f.bpd_cohort_ae_rx_9319 as
+select * from f.bpd_cohort_ms_rx_9319 
+where drugcode in (select drugcode from f.drugcode_ae);
+quit; 
+
+data f.bpd_cohort_ae_rx_9319;
+set f.bpd_cohort_ae_rx_9319;
+quantity=put(prscqty,10.);
+dose=put(dosgval,7.);
+run;
+
+data f.bpd_cohort_ae_rx_9319;
+set f.bpd_cohort_ae_rx_9319;
+dur=quantity/dose;
+run;
+
+data f.bpd_cohort_ae_rx_9319;
+set f.bpd_cohort_ae_rx_9319;
+dur_ceil=ceil(dur);
+run;
+
+data f.bpd_cohort_ae_rx_9319;
+set f.bpd_cohort_ae_rx_9319;
+if dur_ceil<=0 then dur_ceil=.;
+run;
+
+proc means data=f.bpd_cohort_ae_rx_9319;
+class drugcode;
+var dur_ceil;
+output out=d q1=q1 Median=q2 q3=q3;
+run;
+
+proc sql;
+create table bpd_cohort_ae_rx_9319 as
+select a.*, b.q2 
+from f.bpd_cohort_ae_rx_9319 a left join d b
+on a.drugcode=b.drugcode;
+quit;
+
+data bpd_cohort_ae_rx_9319;
+set bpd_cohort_ae_rx_9319;
+if q2=. then q2=28;
+run;
+
+data f.bpd_cohort_ae_rx_9319;
+set bpd_cohort_ae_rx_9319;
+if dur_ceil=. then dur_ceil=q2;
+run;
+
+data f.bpd_cohort_ae_rx_9319;
+set f.bpd_cohort_ae_rx_9319;
+prscend=prscdate+dur_ceil-1;
+format prscend date9.;
+run;
+
+proc sort data=f.bpd_cohort_ae_rx_9319;
+by id prscdate;
+run;
+
+data f.bpd_cohort_ms_rx_9319;
+set f.bpd_cohort_li_rx_9319 f.bpd_cohort_ap_rx_9319 f.bpd_cohort_ae_rx_9319;
+run; 
+
+proc sort data=f.bpd_cohort_ms_rx_9319;
+by id prscdate;
+run;
+
+proc sort data=f.bpd_cohort_ms_rx_9319 nodupkeys out=h;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_ms_rx_9319 as
+select a.*, b.lc 
+from f.bpd_cohort_ms_rx_9319 a, f.bpd_cohort_18_head b
+where a.id=b.id;
+quit;
+ 
+data f.bpd_cohort_ms_rx_9319;
+set bpd_cohort_ms_rx_9319;
+run;
+
+/***********define new user of mood stabilizers*********/;
+
+data f.bpd_cohort_ms_rx_9319_lc;
+set f.bpd_cohort_ms_rx_9319;
+if prscdate>lc;
+run; 
+
+data f.bpd_cohort_ms_rx_9319_b4_lc;
+set f.bpd_cohort_ms_rx_9319;
+if prscdate<=lc;
+run; 
+
+proc sql;
+create table f.bpd_cohort_ms_rx_9319_new as
+select * from f.bpd_cohort_ms_rx_9319_lc
+where id not in (select id from f.bpd_cohort_ms_rx_9319_b4_lc);
+quit; 
+
+proc sort data=f.bpd_cohort_ms_rx_9319_new nodupkeys out=f.bpd_cohort_ms_heads_new;
+by id;
+run; 
+
+/*********define index date: first rx date*********/;
+proc sort data=f.bpd_cohort_li_rx_9319;
+by id prscdate;
+run;
+
+proc sql;
+create table f.bpd_cohort_li_rx_9319_new as
+select * from f.bpd_cohort_li_rx_9319
+where id in (select id from f.bpd_cohort_ms_rx_9319_new);
+quit; 
+
+proc sort data=f.bpd_cohort_li_rx_9319_new nodupkeys out=f.li_heads;
+by id;
+run; 
+
+data f.li_cohort_new;
+format id blockseq lag_max_rxend prscdate prscend;
+set f.bpd_cohort_li_rx_9319_new;
+by id;
+retain max_rxend;
+if first. id then max_rxend=prscend;
+else max_rxend=max(max_rxend,prscend);
+lag_max_rxend=lag(max_rxend);
+if first. id then do;
+blockseq=1;
+lag_max_rxend=.;
+end;
+else if (.z<lag_max_rxend<prscdate-1) then blockseq+1;
+format lag_max_rxend max_rxend date9.;
+run;
+
+proc sql;
+create table f.ms_li_rx_ol_clean as
+select id, blockseq, min(prscdate) as block_st format date9., max(prscend) as block_end format date9.,prscdate, prscend
+from f.li_cohort_new
+group by id, blockseq 
+order by id, blockseq, prscdate, prscend;
+quit;
+
+proc sort data=f.ms_li_rx_ol_clean nodupkeys out=li_test;
+by id prscdate prscend block_st block_end;
+run;
+
+proc sql;
+create table bpd_cohort_li_rx_9319_new as
+select * from f.bpd_cohort_li_rx_9319_new a left join (select block_st, block_end from li_test b)
+on a.id=b.id && a.prscdate=b.prscdate && a.prscend=b.prscend;
+quit; 
+
+data f.bpd_cohort_li_rx_9319_new;
+set bpd_cohort_li_rx_9319_new;
+run;
+
+data f.bpd_cohort_li_rx_9319_new;
+set f.bpd_cohort_li_rx_9319_new;
+prscend_3m=block_end+84;
+format prscend_3m date9.;
+run;
+
+proc sort data=f.bpd_cohort_li_rx_9319_new nodupkeys out=f.bpd_cohort_li_rx_9319_ol;
+by id block_st block_end;
+run;
+
+data f.bpd_cohort_li_rx_9319_ol;
+set f.bpd_cohort_li_rx_9319_ol;
+by id;
+if last.id then last=1;
+else last=0;
+run;
+
+data f.bpd_cohort_li_rx_9319_ol;
+set f.bpd_cohort_li_rx_9319_ol;
+prscend_3m_lag=lag(prscend_3m);
+format prscend_3m_lag date9.;
+run;
+
+data f.bpd_cohort_li_rx_9319_ol;
+set f.bpd_cohort_li_rx_9319_ol;
+by id;
+if first.id then prscend_3m_lag=.;
+run;
+
+data f.bpd_cohort_li_rx_9319_ol;
+set f.bpd_cohort_li_rx_9319_ol;
+if block_st<=prscend_3m_lag+1 then stop=0;
+else stop=1;
+run;
+
+data f.bpd_cohort_li_rx_9319_ol;
+set f.bpd_cohort_li_rx_9319_ol;
+if last=1 then stop=1;
+if last=0 && prscend_3m_lag=. then stop=.;
+run;
+
+
+proc sort data=f.bpd_cohort_ap_rx_9319;
+by id prscdate prscend;
+run;
+
+proc sql;
+create table f.bpd_cohort_ap_rx_9319_new as
+select * from f.bpd_cohort_ap_rx_9319
+where id in (select id from f.bpd_cohort_ms_rx_9319_new);
+quit;
+
+proc sort data=f.bpd_cohort_ap_rx_9319_new nodupkeys out=f.ap_heads;
+by id;
+run; 
+
+data f.ap_cohort_new;
+format id blockseq lag_max_rxend prscdate prscend;
+set f.bpd_cohort_ap_rx_9319_new;
+by id;
+retain max_rxend;
+if first. id then max_rxend=prscend;
+else max_rxend=max(max_rxend,prscend);
+lag_max_rxend=lag(max_rxend);
+if first. id then do;
+blockseq=1;
+lag_max_rxend=.;
+end;
+else if (.z<lag_max_rxend<prscdate-1) then blockseq+1;
+format lag_max_rxend max_rxend date9.;
+run;
+
+proc sql;
+create table f.ms_ap_rx_ol_clean as
+select id, blockseq, min(prscdate) as block_st format date9., max(prscend) as block_end format date9.,prscdate, prscend
+from f.ap_cohort_new
+group by id, blockseq 
+order by id, blockseq, prscdate, prscend;
+quit;
+
+proc sort data=f.ms_ap_rx_ol_clean nodupkeys out=ap_test;
+by id prscdate prscend block_st block_end;
+run;
+
+proc sql;
+create table bpd_cohort_ap_rx_9319_new as
+select * from f.bpd_cohort_ap_rx_9319_new a left join (select block_st, block_end from ap_test b)
+on a.id=b.id && a.prscdate=b.prscdate && a.prscend=b.prscend;
+quit; 
+
+data f.bpd_cohort_ap_rx_9319_new;
+set bpd_cohort_ap_rx_9319_new;
+run;
+
+data f.bpd_cohort_ap_rx_9319_new;
+set f.bpd_cohort_ap_rx_9319_new;
+prscend_3m=block_end+84;
+format prscend_3m date9.;
+run;
+
+proc sort data=f.bpd_cohort_ap_rx_9319_new nodupkeys out=f.bpd_cohort_ap_rx_9319_ol;
+by id block_st block_end;
+run;
+
+data f.bpd_cohort_ap_rx_9319_ol;
+set f.bpd_cohort_ap_rx_9319_ol;
+by id;
+if last.id then last=1;
+else last=0;
+run;
+
+data f.bpd_cohort_ap_rx_9319_ol;
+set f.bpd_cohort_ap_rx_9319_ol;
+prscend_3m_lag=lag(prscend_3m);
+format prscend_3m_lag date9.;
+run;
+
+data f.bpd_cohort_ap_rx_9319_ol;
+set f.bpd_cohort_ap_rx_9319_ol;
+by id;
+if first.id then prscend_3m_lag=.;
+run;
+
+data f.bpd_cohort_ap_rx_9319_ol;
+set f.bpd_cohort_ap_rx_9319_ol;
+if block_st<=prscend_3m_lag+1 then stop=0;
+else stop=1;
+run;
+
+data f.bpd_cohort_ap_rx_9319_ol;
+set f.bpd_cohort_ap_rx_9319_ol;
+if last=1 then stop=1;
+if last=0 && prscend_3m_lag=. then stop=.;
+run;
+
+proc sort data=f.bpd_cohort_ae_rx_9319;
+by id prscdate;
+run;
+
+proc sql;
+create table f.bpd_cohort_ae_rx_9319_new as
+select * from f.bpd_cohort_ae_rx_9319
+where id in (select id from f.bpd_cohort_ms_rx_9319_new);
+quit;
+
+proc sort data=f.bpd_cohort_ae_rx_9319_new nodupkeys out=f.ae_heads;
+by id;
+run; /*7748*/
+
+data f.ae_cohort_new;
+format id blockseq lag_max_rxend prscdate prscend;
+set f.bpd_cohort_ae_rx_9319_new;
+by id;
+retain max_rxend;
+if first. id then max_rxend=prscend;
+else max_rxend=max(max_rxend,prscend);
+lag_max_rxend=lag(max_rxend);
+if first. id then do;
+blockseq=1;
+lag_max_rxend=.;
+end;
+else if (.z<lag_max_rxend<prscdate-1) then blockseq+1;
+format lag_max_rxend max_rxend date9.;
+run;
+
+proc sql;
+create table f.ms_ae_rx_ol_clean as
+select id, blockseq, min(prscdate) as block_st format date9., max(prscend) as block_end format date9.,prscdate, prscend
+from f.ae_cohort_new
+group by id, blockseq 
+order by id, blockseq, prscdate, prscend;
+quit;
+
+proc sort data=f.ms_ae_rx_ol_clean nodupkeys out=ae_test;
+by id prscdate prscend block_st block_end;
+run;
+
+proc sql;
+create table bpd_cohort_ae_rx_9319_new as
+select * from f.bpd_cohort_ae_rx_9319_new a left join (select block_st, block_end from ae_test b)
+on a.id=b.id && a.prscdate=b.prscdate && a.prscend=b.prscend;
+quit; 
+
+data f.bpd_cohort_ae_rx_9319_new;
+set bpd_cohort_ae_rx_9319_new;
+run;
+
+data f.bpd_cohort_ae_rx_9319_new;
+set f.bpd_cohort_ae_rx_9319_new;
+prscend_3m=block_end+84;
+format prscend_3m date9.;
+run;
+
+proc sort data=f.bpd_cohort_ae_rx_9319_new nodupkeys out=f.bpd_cohort_ae_rx_9319_ol;
+by id block_st block_end;
+run;
+
+data f.bpd_cohort_ae_rx_9319_ol;
+set f.bpd_cohort_ae_rx_9319_ol;
+by id;
+if last.id then last=1;
+else last=0;
+run;
+
+data f.bpd_cohort_ae_rx_9319_ol;
+set f.bpd_cohort_ae_rx_9319_ol;
+prscend_3m_lag=lag(prscend_3m);
+format prscend_3m_lag date9.;
+run;
+
+data f.bpd_cohort_ae_rx_9319_ol;
+set f.bpd_cohort_ae_rx_9319_ol;
+by id;
+if first.id then prscend_3m_lag=.;
+run;
+
+data f.bpd_cohort_ae_rx_9319_ol;
+set f.bpd_cohort_ae_rx_9319_ol;
+if block_st<=prscend_3m_lag+1 then stop=0;
+else stop=1;
+run;
+
+data f.bpd_cohort_ae_rx_9319_ol;
+set f.bpd_cohort_ae_rx_9319_ol;
+if last=1 then stop=1;
+if last=0 && prscend_3m_lag=. then stop=.;
+run;
+
+data f.li_heads;
+set f.li_heads;
+index_date_li=prscdate;
+format index_date_li date9.;
+run;
+
+data f.ap_heads;
+set f.ap_heads;
+index_date_ap=prscdate;
+format index_date_ap date9.;
+run;
+
+data f.ae_heads;
+set f.ae_heads;
+index_date_ae=prscdate;
+format index_date_ae date9.;
+run;
+
+proc sql;
+create table li as 
+select * from f.bpd_cohort_ms_heads_new a left join (select index_date_li from f.li_heads b)
+on a.id=b.id;
+quit;
+
+proc sql;
+create table li_ap as
+select * from li a left join (select index_date_ap from f.ap_heads b)
+on a.id=b.id;
+quit;
+
+proc sql;
+create table li_ap_ae as
+select * from li_ap a left join (select index_date_ae from f.ae_heads b)
+on a.id=b.id;
+quit;
+
+data li_ap_ae_xmulti;
+set li_ap_ae;
+if (index_date_li^=. && index_date_li=index_date_ap) or (index_date_li^=. && index_date_li=index_date_ae) or (index_date_ap^=. && index_date_ap=index_date_ae)then delete;
+run; 
+
+/********remove people with multiple exposure at the start of follow-up********/;
+proc sql;
+create table f.bpd_cohort_ms_xmulti_heads_new as
+select * from f.bpd_cohort_ms_heads_new 
+where id in (select id from li_ap_ae_xmulti);
+quit; 
+
+data li_ap_ae_xmulti;
+set li_ap_ae_xmulti;
+index_date=min(index_date_li,index_date_ap,index_date_ae);
+format index_date date9.;
+run;
+
+data li_ap_ae_xmulti;
+set li_ap_ae_xmulti;
+if index_date=index_date_li then exposure_status='li';
+if index_date=index_date_ap then exposure_status='ap';
+if index_date=index_date_ae then exposure_status='ae';
+run;
+
+proc sql;
+create table bpd_cohort_ms_xmulti_heads_new as
+select * from f.bpd_cohort_ms_xmulti_heads_new a left join (select index_date, exposure_status from li_ap_ae_xmulti b)
+on a.id=b.id;
+quit;
+
+data f.li_ap_ae_xmulti;
+set li_ap_ae_xmulti;
+run;
+
+data f.bpd_cohort_ms_xmulti_heads_new;
+retain id yob1 sex lc xferdate deathdate exposure_status index_date;
+set bpd_cohort_ms_xmulti_heads_new;
+run;
+
+data f.bpd_cohort_ms_xmulti_heads_new;
+set f.bpd_cohort_ms_xmulti_heads_new;
+if (xferdate<=index_date && xferdate^=.) or (deathdate<=index_date && deathdate^=.) then delete;
+run; 
+
+proc freq data=f.bpd_cohort_ms_xmulti_heads_new;
+table exposure_status;
+run; 
+
+data f.bpd_cohort_li_index;
+set f.bpd_cohort_ms_xmulti_heads_new;
+if exposure_status='li';
+run;
+
+data f.bpd_cohort_ap_index;
+set f.bpd_cohort_ms_xmulti_heads_new;
+if exposure_status='ap';
+run;
+
+data f.bpd_cohort_ae_index;
+set f.bpd_cohort_ms_xmulti_heads_new;
+if exposure_status='ae';
+run;
+
+data li_ap_ae_xmulti_v1;
+set f.li_ap_ae_xmulti;
+if (index_date_li^=. && index_date_ap^=. && index_date_ae^=.) && (index_date<index_date_ap<=index_date_ae) then switch=index_date_ap;
+if (index_date_li^=. && index_date_ap^=. && index_date_ae^=.) && (index_date<index_date_ae<=index_date_ap) then switch=index_date_ae;
+if (index_date_li^=. && index_date_ap^=. && index_date_ae^=.) && (index_date<index_date_li<=index_date_ae) then switch=index_date_li;
+if (index_date_li^=. && index_date_ap^=. && index_date_ae^=.) && (index_date<index_date_ae<=index_date_li) then switch=index_date_ae;
+if (index_date_li^=. && index_date_ap^=. && index_date_ae^=.) && (index_date<index_date_ap<=index_date_li) then switch=index_date_ap;
+if (index_date_li^=. && index_date_ap^=. && index_date_ae^=.) && (index_date<index_date_li<=index_date_ap) then switch=index_date_li;
+if (index_date_li^=. && index_date_ap^=. && index_date_ae=.) && (index_date<index_date_ap) then switch=index_date_ap;
+if (index_date_li^=. && index_date_ap^=. && index_date_ae=.) && (index_date<index_date_li) then switch=index_date_li;
+if (index_date_li^=. && index_date_ap=. && index_date_ae^=.) && (index_date<index_date_ae) then switch=index_date_ae;
+if (index_date_li^=. && index_date_ap=. && index_date_ae^=.) && (index_date<index_date_li) then switch=index_date_li;
+if (index_date_li=. && index_date_ap^=. && index_date_ae^=.) && (index_date<index_date_ae) then switch=index_date_ae;
+if (index_date_li=. && index_date_ap^=. && index_date_ae^=.) && (index_date<index_date_ap) then switch=index_date_ap;
+format switch date9.;
+run;
+
+proc sql;
+create table bpd_cohort_ms_xmulti_heads_new as
+select a.*, b.switch 
+from f.bpd_cohort_ms_xmulti_heads_new a, li_ap_ae_xmulti_v1 b
+where a.id=b.id;
+quit;
+
+data f.bpd_cohort_ms_xmulti_heads_new;
+set bpd_cohort_ms_xmulti_heads_new;
+run;
+
+data f.bpd_cohort_li_rx_last;
+set f.bpd_cohort_li_rx_9319_ol;
+if last=1;
+run;
+
+data f.bpd_cohort_li_rx_last;
+set f.bpd_cohort_li_rx_last;
+if block_st>prscend_3m_lag+1 && prscend_3m_lag^=. then stop_date=prscend_3m_lag;
+if block_st<=prscend_3m_lag+1 && prscend_3m_lag^=. then stop_date=prscend_3m;
+if prscend_3m_lag=. then stop_date=prscend_3m;
+format stop_date date9.;
+run;
+
+data f.bpd_cohort_li_rx_discon;
+set f.bpd_cohort_li_rx_9319_ol;
+if last=0 && stop=1; 
+run;
+
+proc sort data=f.bpd_cohort_li_rx_discon;
+by id block_st block_end;
+run;
+
+proc sort data=f.bpd_cohort_li_rx_discon nodupkeys;
+by id;
+run;
+
+data f.bpd_cohort_li_rx_discon;
+set f.bpd_cohort_li_rx_discon;
+stop_date=prscend_3m_lag;
+format stop_date date9.;
+run;
+
+proc sql;
+create table bpd_cohort_li_rx_last as
+select * from f.bpd_cohort_li_rx_last
+where id not in (select id from f.bpd_cohort_li_rx_discon);
+quit;
+
+data f.bpd_cohort_li_rx_last;
+set bpd_cohort_li_rx_last;
+run;
+
+data f.bpd_cohort_li_rx_stop;
+set f.bpd_cohort_li_rx_last f.bpd_cohort_li_rx_discon;
+run;
+
+proc sort data=f.bpd_cohort_li_rx_stop nodupkeys;
+by id;
+run;
+
+data f.bpd_cohort_ap_rx_last;
+set f.bpd_cohort_ap_rx_9319_ol;
+if last=1;
+run;
+
+data f.bpd_cohort_ap_rx_last;
+set f.bpd_cohort_ap_rx_last;
+if block_st>prscend_3m_lag+1 && prscend_3m_lag^=. then stop_date=prscend_3m_lag;
+if block_st<=prscend_3m_lag+1 && prscend_3m_lag^=. then stop_date=prscend_3m;
+if prscend_3m_lag=. then stop_date=prscend_3m;
+format stop_date date9.;
+run;
+
+data f.bpd_cohort_ap_rx_discon;
+set f.bpd_cohort_ap_rx_9319_ol;
+if last=0 && stop=1; 
+run;
+
+proc sort data=f.bpd_cohort_ap_rx_discon;
+by id block_st block_end;
+run;
+
+proc sort data=f.bpd_cohort_ap_rx_discon nodupkeys;
+by id;
+run;
+
+data f.bpd_cohort_ap_rx_discon;
+set f.bpd_cohort_ap_rx_discon;
+stop_date=prscend_3m_lag;
+format stop_date date9.;
+run;
+
+proc sql;
+create table bpd_cohort_ap_rx_last as
+select * from f.bpd_cohort_ap_rx_last
+where id not in (select id from f.bpd_cohort_ap_rx_discon);
+quit;
+
+data f.bpd_cohort_ap_rx_last;
+set bpd_cohort_ap_rx_last;
+run;
+
+data f.bpd_cohort_ap_rx_stop;
+set f.bpd_cohort_ap_rx_last f.bpd_cohort_ap_rx_discon;
+run;
+
+proc sort data=f.bpd_cohort_ap_rx_stop nodupkeys;
+by id;
+run;
+
+data f.bpd_cohort_ae_rx_last;
+set f.bpd_cohort_ae_rx_9319_ol;
+if last=1;
+run;
+
+data f.bpd_cohort_ae_rx_last;
+set f.bpd_cohort_ae_rx_last;
+if block_st>prscend_3m_lag+1 && prscend_3m_lag^=. then stop_date=prscend_3m_lag;
+if block_st<=prscend_3m_lag+1 && prscend_3m_lag^=. then stop_date=prscend_3m;
+if prscend_3m_lag=. then stop_date=prscend_3m;
+format stop_date date9.;
+run;
+
+data f.bpd_cohort_ae_rx_discon;
+set f.bpd_cohort_ae_rx_9319_ol;
+if last=0 && stop=1; 
+run;
+
+proc sort data=f.bpd_cohort_ae_rx_discon;
+by id block_st block_end;
+run;
+
+proc sort data=f.bpd_cohort_ae_rx_discon nodupkeys;
+by id;
+run;
+
+data f.bpd_cohort_ae_rx_discon;
+set f.bpd_cohort_ae_rx_discon;
+stop_date=prscend_3m_lag;
+format stop_date date9.;
+run;
+
+proc sql;
+create table bpd_cohort_ae_rx_last as
+select * from f.bpd_cohort_ae_rx_last
+where id not in (select id from f.bpd_cohort_ae_rx_discon);
+quit;
+
+data f.bpd_cohort_ae_rx_last;
+set bpd_cohort_ae_rx_last;
+run;
+
+data f.bpd_cohort_ae_rx_stop;
+set f.bpd_cohort_ae_rx_last f.bpd_cohort_ae_rx_discon;
+run;
+
+proc sort data=f.bpd_cohort_ae_rx_stop nodupkeys;
+by id;
+run;
+
+proc sql;
+create table f.bpd_cohort_li_rx_stop_index as
+select * from f.bpd_cohort_li_rx_stop
+where id in (select id from f.bpd_cohort_li_index);
+quit;
+
+proc sql;
+create table f.bpd_cohort_ap_rx_stop_index as
+select * from f.bpd_cohort_ap_rx_stop
+where id in (select id from f.bpd_cohort_ap_index);
+quit;
+
+proc sql;
+create table f.bpd_cohort_ae_rx_stop_index as
+select * from f.bpd_cohort_ae_rx_stop
+where id in (select id from f.bpd_cohort_ae_index);
+quit;
+
+data f.bpd_cohort_ms_rx_stop_index;
+set f.bpd_cohort_li_rx_stop_index f.bpd_cohort_ap_rx_stop_index f.bpd_cohort_ae_rx_stop_index;
+run;
+
+proc sql;
+create table bpd_cohort_ms_xmulti_heads_new as
+select a.*,b.stop_date
+from f.bpd_cohort_ms_xmulti_heads_new a,f.bpd_cohort_ms_rx_stop_index b
+where a.id=b.id;
+quit; 
+
+data f.bpd_cohort_ms_xmulti_heads_new;
+set bpd_cohort_ms_xmulti_heads_new;
+run; 
+
+proc sql;
+create table f.bpd_cohort_all_dx_new as
+select * from f.bpd_all_dx 
+where id in (select id from f.bpd_cohort_ms_xmulti_heads_new);
+quit; 
+
+/********************************Exclusion criteria: bone tumour anytime before index date***********************************************************************************************/
+proc sql;
+create table f.bpd_cohort_new_bt_dx as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_bonetumour);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_bt_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_cohort_new_bt_dx a,f.bpd_cohort_ms_xmulti_heads_new b  
+where a.id=b.id;
+quit;
+
+data f.bpd_cohort_new_bt_dx;
+set bpd_cohort_new_bt_dx;
+run;
+
+data f.bpd_cohort_new_bt_dx_b4_index;
+set f.bpd_cohort_new_bt_dx;
+if eventdate<=index_date;
+run;
+
+data f.bpd_cohort_new_bt_dx_b4_index;
+set f.bpd_cohort_new_bt_dx_b4_index;
+if eventdate=. then delete;
+run; 
+
+proc sql;
+create table f.bpd_cohort_ms_xmulti_heads_xbt as
+select * from f.bpd_cohort_ms_xmulti_heads_new
+where id not in (select id from f.bpd_cohort_new_bt_dx_b4_index);
+quit; 
+
+/******follow-up until the occurrence of any types of fractures************/
+proc sql;
+create table f.bpd_cohort_new_tfrac_dx as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_total_frac);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_tfrac_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_cohort_new_tfrac_dx a,f.bpd_cohort_ms_xmulti_heads_xbt b  
+where a.id=b.id;
+quit; 
+
+data f.bpd_cohort_new_tfrac_after_index;
+set f.bpd_cohort_new_tfrac_dx;
+if eventdate>index_date;
+run; 
+
+proc sort data=f.bpd_cohort_new_tfrac_after_index nodupkeys out=oh;
+by id;
+run; 
+
+data f.bpd_cohort_new_tfrac_after_index;
+set f.bpd_cohort_new_tfrac_after_index;
+by id;
+if first.id then first_event=eventdate;
+format first_event date9.;
+run;
+
+data f.bpd_cohort_new_tfrac_after_index;
+set f.bpd_cohort_new_tfrac_after_index;
+if first_event=. then delete;
+run;
+
+proc sql;
+create table bpd_cohort_ms_xmulti_heads_new as
+select * from f.bpd_cohort_ms_xmulti_heads_xbt a left join (select first_event from f.bpd_cohort_new_tfrac_after_index b)
+on a.id=b.id;
+quit; 
+
+data f.bpd_cohort_ms_xmulti_heads_tf;
+set bpd_cohort_ms_xmulti_heads_new;
+run;
+
+data f.bpd_cohort_ms_xmulti_heads_tf;
+set f.bpd_cohort_ms_xmulti_heads_tf;
+study_end='31dec2019'd;
+format study_end date9.;
+run;
+
+data f.bpd_cohort_ms_xmulti_heads_tf;
+retain id yob1 sex lc exposure_status index_date xferdate deathdate switch stop_date study_end first_event;
+set f.bpd_cohort_ms_xmulti_heads_tf;
+run;
+
+data f.bpd_cohort_ms_xmulti_heads_tf;
+set f.bpd_cohort_ms_xmulti_heads_tf;
+rc_date=min(xferdate,deathdate,switch,stop_date,study_end,first_event);
+format rc_date date9.;
+run;
+
+data f.bpd_cohort_ms_xmulti_heads_tf;
+set f.bpd_cohort_ms_xmulti_heads_tf;
+if rc_date=first_event then event=1;
+else event=0;
+run;
+
+data f.bpd_cohort_ms_xmulti_heads_tf;
+set f.bpd_cohort_ms_xmulti_heads_tf;
+fu_time=rc_date-index_date+1;
+run;
+
+/**************construct a dataset for propensity score fine stratification********************/;
+libname g 'E:\BPD_UK_fracture\Covariates_total fracture';
+
+/******covariates*********/;
+proc sql;
+create table g.bpd_dx_ckd as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_kidney);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_ckd_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from g.bpd_dx_ckd a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_ckd_dx;
+set bpd_cohort_new_ckd_dx;
+run;
+
+data g.bpd_cohort_new_ckd_dx_b4_index;
+set g.bpd_cohort_new_ckd_dx;
+if eventdate<=index_date;
+run;
+
+data g.bpd_cohort_new_ckd_dx_b4_index;
+set g.bpd_cohort_new_ckd_dx_b4_index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_ckd_dx_b4_index;
+set g.bpd_cohort_new_ckd_dx_b4_index;
+dx_ckd=1;
+run;
+
+proc sort data=g.bpd_cohort_new_ckd_dx_b4_index nodupkeys out=ckd_id;
+by id;
+run; 
+
+proc sql;
+create table g.bpd_cohort_covar as
+select * from f.bpd_cohort_ms_xmulti_heads_tf as a left join (select dx_ckd from ckd_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if dx_ckd=. then dx_ckd=0;
+run;
+
+proc sql;
+create table g.bpd_dx_cld as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_liver);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_cld_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from g.bpd_dx_cld a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_cld_dx;
+set bpd_cohort_new_cld_dx;
+run;
+
+data g.bpd_cohort_new_cld_dx_b4_index;
+set g.bpd_cohort_new_cld_dx;
+if eventdate<=index_date;
+run;
+
+data g.bpd_cohort_new_cld_dx_b4_index;
+set g.bpd_cohort_new_cld_dx_b4_index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_cld_dx_b4_index;
+set g.bpd_cohort_new_cld_dx_b4_index;
+dx_cld=1;
+run;
+
+proc sort data=g.bpd_cohort_new_cld_dx_b4_index nodupkeys out=cld_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select dx_cld from cld_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if dx_cld=. then dx_cld=0;
+run;
+
+proc sql;
+create table f.bpd_dx_asthma as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_asthma);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_asthma_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_dx_asthma a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_asthma_dx;
+set bpd_cohort_new_asthma_dx;
+run;
+
+data g.bpd_cohort_new_ast_dx_b4_index;
+set g.bpd_cohort_new_asthma_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_ast_dx_b4_index;
+set g.bpd_cohort_new_ast_dx_b4_index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_ast_dx_b4_index;
+set g.bpd_cohort_new_ast_dx_b4_index;
+dx_asthma=1;
+run;
+
+proc sort data=g.bpd_cohort_new_ast_dx_b4_index nodupkeys out=asthma_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select dx_asthma from asthma_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if dx_asthma=. then dx_asthma=0;
+run;
+
+proc sql;
+create table f.bpd_dx_copd as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_copd);
+quit;
+
+proc sql;
+create table bpd_cohort_new_copd_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_dx_copd a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_copd_dx;
+set bpd_cohort_new_copd_dx;
+run;
+
+data g.bpd_cohort_new_copd_dx_b4_index;
+set g.bpd_cohort_new_copd_dx;
+if eventdate<=index_date;
+run;
+
+data g.bpd_cohort_new_copd_dx_b4_index;
+set g.bpd_cohort_new_copd_dx_b4_index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_copd_dx_b4_index;
+set g.bpd_cohort_new_copd_dx_b4_index;
+dx_copd=1;
+run;
+
+proc sort data=g.bpd_cohort_new_copd_dx_b4_index nodupkeys out=copd_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select dx_copd from copd_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if dx_copd=. then dx_copd=0;
+run;
+
+proc sql;
+create table f.bpd_cohort_new_tfrac_dx as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_total_frac);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_frac_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_cohort_new_tfrac_dx a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_frac_dx;
+set bpd_cohort_new_frac_dx;
+run;
+
+data g.bpd_cohort_new_frac_dx_b4_index;
+set g.bpd_cohort_new_frac_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_frac_dx_b4_index;
+set g.bpd_cohort_new_frac_dx_b4_index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_frac_dx_b4_index;
+set g.bpd_cohort_new_frac_dx_b4_index;
+hx_frac=1;
+run;
+
+proc sort data=g.bpd_cohort_new_frac_dx_b4_index nodupkeys out=frac_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select hx_frac from frac_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if hx_frac=. then hx_frac=0;
+run;
+
+proc sql;
+create table f.bpd_cohort_new_fall_dx as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_fall);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_fall_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_cohort_new_fall_dx a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_fall_dx;
+set bpd_cohort_new_fall_dx;
+run;
+
+data g.bpd_cohort_new_fall_dx_b4_index;
+set g.bpd_cohort_new_fall_dx;
+if eventdate<=index_date;
+run;
+
+data g.bpd_cohort_new_fall_dx_b4_index;
+set g.bpd_cohort_new_fall_dx_b4_index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_fall_dx_b4_index;
+set g.bpd_cohort_new_fall_dx_b4_index;
+hx_fall=1;
+run;
+
+proc sort data=g.bpd_cohort_new_fall_dx_b4_index nodupkeys out=fall_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select hx_fall from fall_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if hx_fall=. then hx_fall=0;
+run;
+
+proc sql;
+create table f.bpd_cohort_new_ra_dx as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_ra);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_ra_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_cohort_new_ra_dx a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_ra_dx;
+set bpd_cohort_new_ra_dx;
+run;
+
+data g.bpd_cohort_new_ra_dx_b4_index;
+set g.bpd_cohort_new_ra_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_ra_dx_b4_index;
+set g.bpd_cohort_new_ra_dx_b4_index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_ra_dx_b4_index;
+set g.bpd_cohort_new_ra_dx_b4_index;
+dx_ra=1;
+run;
+
+proc sort data=g.bpd_cohort_new_ra_dx_b4_index nodupkeys out=ra_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select dx_ra from ra_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if dx_ra=. then dx_ra=0;
+run;
+
+proc sql;
+create table f.bpd_cohort_new_htn_dx as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_htn);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_htn_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_cohort_new_htn_dx a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_htn_dx;
+set bpd_cohort_new_htn_dx;
+run;
+
+data g.bpd_cohort_new_htn_dx_b4_index;
+set g.bpd_cohort_new_htn_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_htn_dx_b4_index;
+set g.bpd_cohort_new_htn_dx_b4_index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_htn_dx_b4_index;
+set g.bpd_cohort_new_htn_dx_b4_index;
+dx_htn=1;
+run;
+
+proc sort data=g.bpd_cohort_new_htn_dx_b4_index nodupkeys out=htn_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select dx_htn from htn_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if dx_htn=. then dx_htn=0;
+run;
+
+proc sql;
+create table f.bpd_cohort_new_park_dx as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_parkinson);
+quit; /
+
+proc sql;
+create table bpd_cohort_new_park_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_cohort_new_park_dx a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_park_dx;
+set bpd_cohort_new_park_dx;
+run;
+
+data g.bpd_cohort_new_park_dx_b4_index;
+set g.bpd_cohort_new_park_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_park_dx_b4_index;
+set g.bpd_cohort_new_park_dx_b4_index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_park_dx_b4_index;
+set g.bpd_cohort_new_park_dx_b4_index;
+dx_parkinson=1;
+run;
+
+proc sort data=g.bpd_cohort_new_park_dx_b4_index nodupkeys out=park_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select dx_parkinson from park_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if dx_parkinson=. then dx_parkinson=0;
+run;
+
+proc sql;
+create table f.bpd_cohort_new_thy_dx as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_thyroid);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_thy_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_cohort_new_thy_dx a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_thy_dx;
+set bpd_cohort_new_thy_dx;
+run;
+
+data g.bpd_cohort_new_thy_dx_b4_index;
+set g.bpd_cohort_new_thy_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_thy_dx_b4_index;
+set g.bpd_cohort_new_thy_dx_b4_index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_thy_dx_b4_index;
+set g.bpd_cohort_new_thy_dx_b4_index;
+dx_thy=1;
+run;
+
+proc sort data=g.bpd_cohort_new_thy_dx_b4_index nodupkeys out=thy_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select dx_thy from thy_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if dx_thy=. then dx_thy=0;
+run;
+
+proc sql;
+create table f.bpd_cohort_new_t2dm_dx as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_t2dm);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_t2dm_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_cohort_new_t2dm_dx a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_t2dm_dx;
+set bpd_cohort_new_t2dm_dx;
+run;
+
+data g.bpd_cohort_new_t2dm_dx_b4_index;
+set g.bpd_cohort_new_t2dm_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_t2dm_dx_b4_index;
+set g.bpd_cohort_new_t2dm_dx_b4_index;
+if eventdate=. then delete;
+run;
+
+proc sql;
+create table f.bpd_cohort_new_t2dm_rx as
+select * from f.bpd_cohort_all_rx 
+where drugcode in (select drugcode from f.drugcode_dm);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_t2dm_rx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_cohort_new_t2dm_rx a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit; 
+
+data g.bpd_cohort_new_t2dm_rx;
+set bpd_cohort_new_t2dm_rx;
+run;
+
+data g.bpd_cohort_new_t2dm_rx_b4_index;
+set g.bpd_cohort_new_t2dm_rx;
+if index_date-90<=prscdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_t2dm_rx_b4_index;
+set g.bpd_cohort_new_t2dm_rx_b4_index;
+if prscdate=. then delete;
+run;
+
+data g.bpd_cohort_new_t2dm_rx_b4_index;
+set g.bpd_cohort_new_t2dm_rx_b4_index;
+rx_t2dm=1;
+run;
+
+data g.bpd_cohort_total_t2dm_b4_index;
+set g.bpd_cohort_new_t2dm_rx_b4_index g.bpd_cohort_new_t2dm_dx_b4_index;
+run; 
+
+data g.bpd_cohort_total_t2dm_b4_index;
+set g.bpd_cohort_total_t2dm_b4_index;
+dx_t2dm=1;
+run;
+
+proc sort data=g.bpd_cohort_total_t2dm_b4_index nodupkeys out=t2dm_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select dx_t2dm from t2dm_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if dx_t2dm=. then dx_t2dm=0;
+run;
+
+proc sql;
+create table f.bpd_cohort_new_acei_rx as
+select * from f.bpd_cohort_all_rx 
+where drugcode in (select drugcode from f.drugcode_acei);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_acei_rx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_cohort_new_acei_rx a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit; 
+
+data g.bpd_cohort_new_acei_rx;
+set bpd_cohort_new_acei_rx;
+run;
+
+data g.bpd_cohort_new_acei_rx_b4_index;
+set g.bpd_cohort_new_acei_rx;
+if index_date-90<=prscdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_acei_rx_b4_index;
+set g.bpd_cohort_new_acei_rx_b4_index;
+if prscdate=. then delete;
+run;
+
+data g.bpd_cohort_new_acei_rx_b4_index;
+set g.bpd_cohort_new_acei_rx_b4_index;
+rx_acei=1;
+run;
+
+proc sort data=g.bpd_cohort_new_acei_rx_b4_index nodupkeys out=acei_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select rx_acei from acei_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if rx_acei=. then rx_acei=0;
+run;
+
+proc sql;
+create table f.bpd_cohort_new_arb_rx as
+select * from f.bpd_cohort_all_rx 
+where drugcode in (select drugcode from f.drugcode_arbs);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_arb_rx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_cohort_new_arb_rx a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit; 
+
+data g.bpd_cohort_new_arb_rx;
+set bpd_cohort_new_arb_rx;
+run;
+
+data g.bpd_cohort_new_arb_rx_b4_index;
+set g.bpd_cohort_new_arb_rx;
+if index_date-90<=prscdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_arb_rx_b4_index;
+set g.bpd_cohort_new_arb_rx_b4_index;
+if prscdate=. then delete;
+run;
+
+data g.bpd_cohort_new_arb_rx_b4_index;
+set g.bpd_cohort_new_arb_rx_b4_index;
+rx_arb=1;
+run;
+
+proc sort data=g.bpd_cohort_new_arb_rx_b4_index nodupkeys out=arb_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select rx_arb from arb_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if rx_arb=. then rx_arb=0;
+run;
+
+proc sql;
+create table f.bpd_cohort_new_bb_rx as
+select * from f.bpd_cohort_all_rx 
+where drugcode in (select drugcode from f.drugcode_bb);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_bb_rx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_cohort_new_bb_rx a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_bb_rx;
+set bpd_cohort_new_bb_rx;
+run;
+
+data g.bpd_cohort_new_bb_rx_b4_index;
+set g.bpd_cohort_new_bb_rx;
+if index_date-90<=prscdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_bb_rx_b4_index;
+set g.bpd_cohort_new_bb_rx_b4_index;
+if prscdate=. then delete;
+run;
+
+data g.bpd_cohort_new_bb_rx_b4_index;
+set g.bpd_cohort_new_bb_rx_b4_index;
+rx_bb=1;
+run;
+
+proc sort data=g.bpd_cohort_new_bb_rx_b4_index nodupkeys out=bb_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select rx_bb from bb_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if rx_bb=. then rx_bb=0;
+run;
+
+proc sql;
+create table f.bpd_cohort_new_seda_rx as
+select * from f.bpd_cohort_all_rx 
+where drugcode in (select drugcode from f.drugcode_seda);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_seda_rx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_cohort_new_seda_rx a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit; 
+
+data g.bpd_cohort_new_seda_rx;
+set bpd_cohort_new_seda_rx;
+run;
+
+data g.bpd_cohort_new_seda_rx_b4_index;
+set g.bpd_cohort_new_seda_rx;
+if index_date-90<=prscdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_seda_rx_b4_index;
+set g.bpd_cohort_new_seda_rx_b4_index;
+if prscdate=. then delete;
+run;
+
+data g.bpd_cohort_new_seda_rx_b4_index;
+set g.bpd_cohort_new_seda_rx_b4_index;
+rx_seda=1;
+run;
+
+proc sort data=g.bpd_cohort_new_seda_rx_b4_index nodupkeys out=seda_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select rx_seda from seda_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if rx_seda=. then rx_seda=0;
+run;
+
+proc sql;
+create table f.bpd_cohort_new_ster_rx as
+select * from f.bpd_cohort_all_rx 
+where drugcode in (select drugcode from f.drugcode_steroid);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_ster_rx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_cohort_new_ster_rx a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit; 
+
+data g.bpd_cohort_new_ster_rx;
+set bpd_cohort_new_ster_rx;
+run;
+
+data g.bpd_cohort_new_ster_rx_b4_index;
+set g.bpd_cohort_new_ster_rx;
+if index_date-90<=prscdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_ster_rx_b4_index;
+set g.bpd_cohort_new_ster_rx_b4_index;
+if prscdate=. then delete;
+run;
+
+data g.bpd_cohort_new_ster_rx_b4_index;
+set g.bpd_cohort_new_ster_rx_b4_index;
+rx_ster=1;
+run;
+
+proc sort data=g.bpd_cohort_new_ster_rx_b4_index nodupkeys out=ster_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select rx_ster from ster_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if rx_ster=. then rx_ster=0;
+run;
+
+proc sql;
+create table f.bpd_dx_cvd as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_cvd);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_cvd_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_dx_cvd a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_cvd_dx;
+set bpd_cohort_new_cvd_dx;
+run;
+
+data g.bpd_cohort_new_cvd_dx_b4_index;
+set g.bpd_cohort_new_cvd_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_cvd_dx_b4_index;
+set g.bpd_cohort_new_cvd_dx_b4_index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_cvd_dx_b4_index;
+set g.bpd_cohort_new_cvd_dx_b4_index;
+dx_cvd=1;
+run;
+
+proc sort data=g.bpd_cohort_new_cvd_dx_b4_index nodupkeys out=cvd_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select dx_cvd from cvd_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if dx_cvd=. then dx_cvd=0;
+run;
+
+proc sql;
+create table f.bpd_dx_cere as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_cerevas);
+quit; /*3342*/
+
+proc sql;
+create table bpd_cohort_new_cere_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_dx_cere a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit; 
+
+data g.bpd_cohort_new_cere_dx;
+set bpd_cohort_new_cere_dx;
+run;
+
+data g.bpd_cohort_new_cere_dx_b4_index;
+set g.bpd_cohort_new_cere_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_cere_dx_b4_index;
+set g.bpd_cohort_new_cere_dx_b4_index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_cere_dx_b4_index;
+set g.bpd_cohort_new_cere_dx_b4_index;
+dx_cere=1;
+run;
+
+proc sort data=g.bpd_cohort_new_cere_dx_b4_index nodupkeys out=cere_id;
+by id;
+run;
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select dx_cere from cere_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if dx_cere=. then dx_cere=0;
+run;
+
+proc sql;
+create table f.bpd_dx_osteo as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_osteoporosis);
+quit;
+
+proc sql;
+create table bpd_cohort_new_osteo_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_dx_osteo a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_osteo_dx;
+set bpd_cohort_new_osteo_dx;
+run;
+
+data g.bpd_cohort_new_osteo_dx_b4_index;
+set g.bpd_cohort_new_osteo_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_osteo_dx_b4_index;
+set g.bpd_cohort_new_osteo_dx_b4_index;
+if eventdate=. then delete;
+run;
+
+data f.drugcode_osteo;
+set f.drugcode_alendronate f.drugcode_denosumab f.drugcode_zoledronic f.drugcode_strontium f.drugcode_ibandronic f.drugcode_teriparatide
+f.drugcode_risedronate;
+run;
+
+proc sql;
+create table f.bpd_cohort_new_osteo_rx as
+select * from f.bpd_cohort_all_rx 
+where drugcode in (select drugcode from f.drugcode_osteo);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_osteo_rx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_cohort_new_osteo_rx a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit; 
+
+data g.bpd_cohort_new_osteo_rx;
+set bpd_cohort_new_osteo_rx;
+run;
+
+data g.bpd_cohort_new_osteo_rx_b4_index;
+set g.bpd_cohort_new_osteo_rx;
+if index_date-365<=prscdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_osteo_rx_b4_index;
+set g.bpd_cohort_new_osteo_rx_b4_index;
+if prscdate=. then delete;
+run;
+
+data g.bpd_cohort_new_osteo_rx_b4_index;
+set g.bpd_cohort_new_osteo_rx_b4_index;
+rx_osteo=1;
+run;
+
+data g.bpd_cohort_total_osteo_b4_index;
+set g.bpd_cohort_new_osteo_rx_b4_index g.bpd_cohort_new_osteo_dx_b4_index;
+run; 
+
+data g.bpd_cohort_total_osteo_b4_index;
+set g.bpd_cohort_total_osteo_b4_index;
+dx_rx_osteo=1;
+run;
+
+proc sort data=g.bpd_cohort_total_osteo_b4_index nodupkeys out=osteo_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select dx_osteo from osteo_id as b)
+on a.id=b.id;
+quit;
+
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if dx_rx_osteo=. then dx_rx_osteo=0;
+run;
+
+proc sql;
+create table f.bpd_rx_ssri_tca as
+select * from f.bpd_cohort_all_rx 
+where drugcode in (select drugcode from f.drugcode_ssri_tca);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_ad_rx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_rx_ssri_tca a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_ssri_tca_rx;
+set bpd_cohort_new_ad_rx;
+run; 
+
+data g.bpd_cohort_new_ssri_rx_b4_index;
+set g.bpd_cohort_new_ssri_tca_rx;
+if index_date-90<=prscdate<=index_date;
+run;
+
+data g.bpd_cohort_new_ssri_rx_b4_index;
+set g.bpd_cohort_new_ssri_rx_b4_index;
+if prscdate=. then delete;
+run;
+
+data g.bpd_cohort_new_ssri_rx_b4_index;
+set g.bpd_cohort_new_ssri_rx_b4_index;
+rx_ssri=1;
+run;
+
+proc sort data=g.bpd_cohort_new_ssri_rx_b4_index nodupkeys out=ssri_tca_id;
+by id;
+run;
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select rx_ssri from ssri_tca_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if rx_ssri=. then rx_ssri=0;
+run;
+
+proc sql;
+create table f.bpd_rx_ad as
+select * from f.bpd_cohort_all_rx 
+where drugcode in (select drugcode from f.drugcode_ad);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_ad_rx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_rx_ad a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit; 
+
+data g.bpd_cohort_new_ad_rx;
+set bpd_cohort_new_ad_rx;
+run;
+
+data g.bpd_cohort_new_ad_rx_b4_index;
+set g.bpd_cohort_new_ad_rx;
+if index_date-90<=prscdate<=index_date;
+run;
+
+data g.bpd_cohort_new_ad_rx_b4_index;
+set g.bpd_cohort_new_ad_rx_b4_index;
+if prscdate=. then delete;
+run;
+
+data g.bpd_cohort_new_ad_rx_b4_index;
+set g.bpd_cohort_new_ad_rx_b4_index;
+rx_ad=1;
+run;
+
+proc sort data=g.bpd_cohort_new_ad_rx_b4_index nodupkeys out=ad_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select rx_ad from ad_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if rx_ad=. then rx_ad=0;
+run;
+
+proc sql;
+create table f.bpd_dx_hypercal as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_hypercal);
+quit;
+
+proc sql;
+create table bpd_cohort_new_hypercal_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_dx_hypercal a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_hypercal_dx;
+set bpd_cohort_new_hypercal_dx;
+run;
+
+data g.bpd_cohort_new_ca_dx_b4_index;
+set g.bpd_cohort_new_hypercal_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_ca_dx_b4_index;
+set g.bpd_cohort_new_ca_dx_b4_index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_ca_dx_b4_index;
+set g.bpd_cohort_new_ca_dx_b4_index;
+dx_ca=1;
+run;
+
+proc sort data=g.bpd_cohort_new_ca_dx_b4_index nodupkeys out=ca_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select dx_ca from ca_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if dx_ca=. then dx_ca=0;
+run;
+
+proc sql;
+create table f.bpd_dx_epilepsy as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_epilepsy);
+quit;
+
+proc sql;
+create table bpd_cohort_new_epilepsy_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_dx_epilepsy a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit; 
+
+data g.bpd_cohort_new_epilepsy_dx;
+set bpd_cohort_new_epilepsy_dx;
+run;
+
+data g.bpd_cohort_new_epi_dx_b4_index;
+set g.bpd_cohort_new_epilepsy_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_epi_dx_b4_index;
+set g.bpd_cohort_new_epi_dx_b4_index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_epi_dx_b4_index;
+set g.bpd_cohort_new_epi_dx_b4_index;
+dx_epilepsy=1;
+run;
+
+proc sort data=g.bpd_cohort_new_epi_dx_b4_index nodupkeys out=epi_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select dx_epilepsy from epi_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if dx_epilepsy=. then dx_epilepsy=0;
+run;
+
+proc sql;
+create table f.bpd_rx_hrt as
+select * from f.bpd_cohort_all_rx 
+where drugcode in (select drugcode from f.drugcode_hrt);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_hrt_rx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_rx_hrt a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit; 
+
+data g.bpd_cohort_new_hrt_rx;
+set bpd_cohort_new_hrt_rx;
+run;
+
+data g.bpd_cohort_new_hrt_rx_b4_index;
+set g.bpd_cohort_new_hrt_rx;
+if index_date-90<=prscdate<=index_date;
+run;
+
+data g.bpd_cohort_new_hrt_rx_b4_index;
+set g.bpd_cohort_new_hrt_rx_b4_index;
+if prscdate=. then delete;
+run;
+
+data g.bpd_cohort_new_hrt_rx_b4_index;
+set g.bpd_cohort_new_hrt_rx_b4_index;
+rx_hrt=1;
+run;
+
+proc sort data=g.bpd_cohort_new_hrt_rx_b4_index nodupkeys out=hrt_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select rx_hrt from hrt_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if rx_hrt=. then rx_hrt=0;
+run;
+
+proc sql;
+create table f.bpd_rx_otherae as
+select * from f.bpd_cohort_all_rx 
+where drugcode in (select drugcode from f.drugcode_otherae);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_ae_rx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_rx_otherae a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit; 
+
+data g.bpd_cohort_new_ae_rx;
+set bpd_cohort_new_ae_rx;
+run;
+
+data g.bpd_cohort_new_ae_rx_b4_index;
+set g.bpd_cohort_new_ae_rx;
+if index_date-90<=prscdate<=index_date;
+run;
+
+data g.bpd_cohort_new_ae_rx_b4_index;
+set g.bpd_cohort_new_ae_rx_b4_index;
+if prscdate=. then delete;
+run;
+
+data g.bpd_cohort_new_ae_rx_b4_index;
+set g.bpd_cohort_new_ae_rx_b4_index;
+rx_ae=1;
+run;
+
+proc sort data=g.bpd_cohort_new_ae_rx_b4_index nodupkeys out=ae_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select rx_ae from ae_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if rx_ae=. then rx_ae=0;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if dx_epilepsy=1 or rx_ae=1 then dx_epi=1;
+else dx_epi=0;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+index_year=year(index_date);
+age_index=year(index_date)-yob1;
+run;
+
+proc sql;
+create table f.bpd_rx_opioid as
+select * from f.bpd_cohort_all_rx 
+where drugcode in (select drugcode from f.drugcode_opioid);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_opi_rx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_rx_opioid a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit; 
+
+data g.bpd_cohort_new_opi_rx;
+set bpd_cohort_new_opi_rx;
+run;
+
+data g.bpd_cohort_new_opi_rx_b4_index;
+set g.bpd_cohort_new_opi_rx;
+if index_date-90<=prscdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_opi_rx_b4_index;
+set g.bpd_cohort_new_opi_rx_b4_index;
+if prscdate=. then delete;
+run;
+
+data g.bpd_cohort_new_opi_rx_b4_index;
+set g.bpd_cohort_new_opi_rx_b4_index;
+rx_opioid=1;
+run;
+
+proc sort data=g.bpd_cohort_new_opi_rx_b4_index nodupkeys out=opi_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select rx_opioid from opi_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if rx_opioid=. then rx_opioid=0;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if rx_seda=1 or rx_opi=1 then rx_seda_opi=1;
+else rx_seda_opi=0;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if rx_acei=1 or rx_arb=1 then rx_ras=1;
+else rx_ras=0;
+run;
+
+
+/*bmi*/
+proc sql;
+create table g.bpd_cohort_ahd as
+select * from f.bpd_all_ahd_raw
+where id in (select id from f.bpd_cohort_ms_xmulti_heads_tf);
+quit; 
+
+data g.bpd_cohort_ahd;
+set g.bpd_cohort_ahd;
+dxdate=input(eventdate,yymmdd10.);
+format dxdate date9.;
+run;
+
+data g.bpd_cohort_weight /*data1=weight(kg); data3=bmi*/;
+set g.bpd_cohort_ahd;
+if substr(ahdcode,1,10) in ('1005010200');
+run;
+
+data g.bpd_cohort_weight;
+set g.bpd_cohort_weight;
+rename data3=bmi;
+rename data1=weight;
+run;
+
+data g.bpd_cohort_weight;
+set g.bpd_cohort_weight;
+weight_num=input(weight,11.);
+bmi_num=input(bmi,11.);
+run;
+
+data g.bpd_cohort_height /*data1=height(m)*/;
+set g.bpd_cohort_ahd;
+if substr(ahdcode,1,10) in ('1005010100');
+run;
+
+data g.bpd_cohort_height;
+set g.bpd_cohort_height;
+rename data1=height;
+run;
+
+data g.bpd_cohort_height;
+set g.bpd_cohort_height;
+height_num=input(height,11.);
+run;
+
+proc sql;
+create table bpd_cohort_weight as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from g.bpd_cohort_weight a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_weight;
+set bpd_cohort_weight;
+run;
+
+data g.bpd_cohort_bmi_b4index;
+set g.bpd_cohort_weight;
+if dxdate<=index_date;
+run; 
+
+proc sort data=g.bpd_cohort_bmi_b4index;
+by id descending dxdate descending bmi_num;
+run;
+
+data g.bpd_cohort_bmi_b4index_xmiss;
+set g.bpd_cohort_bmi_b4index;
+if missing(bmi_num) or bmi_num=0 then delete;
+run; 
+
+proc sort data=g.bpd_cohort_bmi_b4index_xmiss;
+by id descending dxdate descending bmi_num;
+run;
+
+proc sort data=g.bpd_cohort_bmi_b4index_xmiss nodupkeys out=g.bpd_cohort_bmi_ahd_b4index;
+by id;
+run;
+
+data g.bpd_cohort_bmi_ahd_b4index;
+set g.bpd_cohort_bmi_ahd_b4index;
+if bmi_num<18.5 then bmi_cat=0; /*underweight*/
+else if 18.5<=bmi_num<=24.9 then bmi_cat=1; /*normal*/
+else if 25.0<=bmi_num<=29.9 then bmi_cat=2; /*overweight*/
+else if bmi_num>=30.0 then bmi_cat=3; /*obesity*/
+run;
+
+proc freq data=g.bpd_cohort_bmi_ahd_b4index;
+table bmi_cat/missing;
+run;
+
+proc sql;
+create table bpd_cohort_height as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from g.bpd_cohort_height a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_height;
+set bpd_cohort_height;
+run;
+
+data g.bpd_cohort_height_b4index;
+set g.bpd_cohort_height;
+if dxdate<=index_date;
+run; 
+
+data g.bpd_cohort_height_b4index_xmiss;
+set g.bpd_cohort_height_b4index;
+if missing(height_num) or height_num=0 then delete;
+run; 
+
+proc sort data=g.bpd_cohort_height_b4index_xmiss;
+by id descending dxdate descending height_num;
+run;
+
+proc sort data=g.bpd_cohort_height_b4index_xmiss nodupkeys out=height_id;
+by id;
+run;
+
+data g.bpd_cohort_weight_b4index;
+set g.bpd_cohort_weight;
+if dxdate<=index_date;
+run; 
+
+proc sort data=g.bpd_cohort_weight_b4index;
+by id descending dxdate descending weight_num;
+run;
+
+data g.bpd_cohort_weight_b4index_xmiss;
+set g.bpd_cohort_weight_b4index;
+if missing(weight_num) or weight_num=0 then delete;
+run; 
+
+proc sort data=g.bpd_cohort_weight_b4index_xmiss;
+by id descending dxdate descending weight_num;
+run;
+
+proc sort data=g.bpd_cohort_weight_b4index_xmiss nodupkeys out=weight_id;
+by id;
+run;
+
+/******calculate bmi using weight and height******/;
+
+proc sql;
+create table bpd_cohort_bmi_cal_b4index as
+select * from f.bpd_cohort_ms_xmulti_heads_tf a left join (select height_num from height_id b)
+on a.id=b.id;
+quit;
+
+proc sql;
+create table bpd_cohort_bmi_cal_b4index_w as
+select * from bpd_cohort_bmi_cal_b4index a left join (select weight_num, dxdate as dxdate_w from weight_id b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_bmi_cal_b4index;
+set bpd_cohort_bmi_cal_b4index_w;
+run;
+
+data g.bpd_cohort_bmi_cal_b4index;
+set g.bpd_cohort_bmi_cal_b4index;
+bmi_cal=weight_num/(height_num**2);
+run;
+
+proc sql;
+create table bpd_cohort_bmi_cal_b4index as
+select * from g.bpd_cohort_bmi_cal_b4index a left join (select bmi_num, dxdate, bmi_cat from g.bpd_cohort_bmi_ahd_b4index b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_bmi_cal_b4index;
+set bpd_cohort_bmi_cal_b4index;
+run;
+
+data g.bpd_cohort_bmi_cal_b4index;
+set g.bpd_cohort_bmi_cal_b4index;
+if bmi_num<18.5 && bmi_num^=. then bmi_cat=0; /*underweight*/
+else if 18.5<=bmi_num<=24.9 && bmi_num^=. then bmi_cat=1; /*normal*/
+else if 25.0<=bmi_num<=29.9 && bmi_num^=. then bmi_cat=2; /*overweight*/
+else if bmi_num>=30.0 && bmi_num^=. then bmi_cat=3; /*obesity*/
+else if bmi_cal<18.5 && bmi_cal^=. then bmi_cat_cal=0;
+else if 18.5<=bmi_cal<=24.9 && bmi_cal^=. then bmi_cat_cal=1;
+else if 25.0<=bmi_cal<=29.9 && bmi_cal^=. then bmi_cat_cal=2; 
+else if bmi_cal>=30.0 && bmi_cal^=. then bmi_cat_cal=3; 
+run;
+
+data g.bpd_cohort_bmi_cal_b4index;
+set g.bpd_cohort_bmi_cal_b4index;
+if bmi_cat=. && bmi_cat_cal^=. then bmi_ahd=bmi_cat_cal;
+else if bmi_cat^=. then bmi_ahd=bmi_cat;
+run; 
+
+data g.bpd_cohort_bmi_cal_b4index;
+set g.bpd_cohort_bmi_cal_b4index;
+if bmi_cat_cal^=. then dxdate_bmi=dxdate_w;
+else if bmi_cat^=. then dxdate_bmi=dxdate;
+format dxdate_bmi date9.;
+run; 
+
+data g.bpd_cohort_bmi_cal_b4index;
+set g.bpd_cohort_bmi_cal_b4index;
+if bmi_ahd=. then bmi_ahd=4;
+run;
+
+proc freq data=g.bpd_cohort_bmi_cal_b4index;
+table bmi_ahd;
+run;
+
+data g.bpd_cohort_bmi_ahd_b4index;
+set g.bpd_cohort_bmi_cal_b4index;
+if bmi_ahd^=4;
+run;
+
+proc sql;
+create table f.bpd_dx_obese as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_obese);
+quit;
+
+proc sql;
+create table bpd_cohort_new_obese_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_dx_obese a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_obese_dx;
+set bpd_cohort_new_obese_dx;
+run;
+
+data g.bpd_cohort_new_obese_dx_b4index;
+set g.bpd_cohort_new_obese_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_obese_dx_b4index;
+set g.bpd_cohort_new_obese_dx_b4index;
+if eventdate=. then delete;
+run; 
+
+data g.bpd_cohort_new_obese_dx_b4index;
+set g.bpd_cohort_new_obese_dx_b4index;
+bmi_cat=3;
+run;
+
+proc sort data=g.bpd_cohort_new_obese_dx_b4index;
+by id descending eventdate;
+run;
+
+proc sort data=g.bpd_cohort_new_obese_dx_b4index nodupkeys out=obese_id;
+by id;
+run; 
+
+proc sql;
+create table g.obese_not_ahd as
+select * from obese_id
+where id not in (select id from g.bpd_cohort_bmi_ahd_b4index);
+quit; 
+
+data g.obese_not_ahd;
+set g.obese_not_ahd;
+rename eventdate=eventdate_obe;
+rename bmi_cat=bmi_cat_obe;
+run;
+
+proc sql;
+create table obese_ahd as
+select a.*, b.bmi_cat as bmi_cat_obe, b.eventdate as eventdate_obe
+from g.bpd_cohort_bmi_ahd_b4index a left join obese_id b
+on a.id=b.id;
+quit;
+
+data bmi_obese;
+set obese_ahd g.obese_not_ahd;
+run;
+
+proc sql;
+create table bmi_obe_status as
+select a.*, b.bmi_cat_obe, b.eventdate_obe
+from g.bpd_cohort_bmi_cal_b4index a left join bmi_obese b
+on a.id=b.id;
+quit;
+
+proc sql;
+create table f.bpd_dx_overw as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_overweight);
+quit;
+
+proc sql;
+create table bpd_cohort_new_overw_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_dx_overw a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_overw_dx;
+set bpd_cohort_new_overw_dx;
+run;
+
+data g.bpd_cohort_new_overw_dx_b4index;
+set g.bpd_cohort_new_overw_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_overw_dx_b4index;
+set g.bpd_cohort_new_overw_dx_b4index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_overw_dx_b4index;
+set g.bpd_cohort_new_overw_dx_b4index;
+bmi_cat=2;
+run;
+
+proc sort data=g.bpd_cohort_new_overw_dx_b4index;
+by id descending eventdate;
+run;
+
+proc sort data=g.bpd_cohort_new_overw_dx_b4index nodupkeys out=overw_id;
+by id;
+run; 
+
+proc sql;
+create table g.overw_not_ahd as
+select * from overw_id
+where id not in (select id from g.bpd_cohort_bmi_ahd_b4index);
+quit; 
+
+data g.overw_not_ahd;
+set g.overw_not_ahd;
+rename eventdate=eventdate_over;
+rename bmi_cat=bmi_cat_over;
+run;
+
+proc sql;
+create table overw_ahd as
+select a.*, b.bmi_cat as bmi_cat_over, b.eventdate as eventdate_over
+from g.bpd_cohort_bmi_ahd_b4index a left join overw_id b
+on a.id=b.id;
+quit;
+
+data bmi_over;
+set overw_ahd g.overw_not_ahd;
+run;
+
+proc sql;
+create table bmi_obe_overw_status as
+select a.*, b.bmi_cat_over, b.eventdate_over
+from bmi_obe_status a left join bmi_over b
+on a.id=b.id;
+quit;
+
+proc sql;
+create table f.bpd_dx_underw as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_underweight);
+quit;
+
+proc sql;
+create table bpd_cohort_new_underw_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_dx_underw a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_underw_dx;
+set bpd_cohort_new_underw_dx;
+run;
+
+data g.bpd_cohort_new_undew_dx_b4index;
+set g.bpd_cohort_new_underw_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_undew_dx_b4index;
+set g.bpd_cohort_new_undew_dx_b4index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_undew_dx_b4index;
+set g.bpd_cohort_new_undew_dx_b4index;
+bmi_cat=0;
+run;
+
+proc sort data=g.bpd_cohort_new_undew_dx_b4index;
+by id descending eventdate;
+run;
+
+proc sort data=g.bpd_cohort_new_undew_dx_b4index nodupkeys out=underw_id;
+by id;
+run; 
+
+proc sql;
+create table g.underw_not_ahd as
+select * from underw_id
+where id not in (select id from g.bpd_cohort_bmi_ahd_b4index);
+quit; 
+
+data g.underw_not_ahd;
+set g.underw_not_ahd;
+rename eventdate=eventdate_under;
+rename bmi_cat=bmi_cat_under;
+run;
+
+proc sql;
+create table under_ahd as
+select a.*, b.bmi_cat as bmi_cat_under, b.eventdate as eventdate_under
+from g.bpd_cohort_bmi_ahd_b4index a left join underw_id b
+on a.id=b.id;
+quit;
+
+data bmi_under;
+set under_ahd g.underw_not_ahd;
+run;
+
+proc sql;
+create table bmi_obe_overw_u_status as
+select a.*, b.bmi_cat_under, b.eventdate_under
+from bmi_obe_overw_status a left join bmi_under b
+on a.id=b.id;
+quit;
+
+proc sql;
+create table f.bpd_dx_normalw as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_normalweight);
+quit;
+
+proc sql;
+create table bpd_cohort_new_normalw_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_dx_normalw a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_normalw_dx;
+set bpd_cohort_new_normalw_dx;
+run;
+
+data g.bpd_cohort_new_normw_dx_b4index;
+set g.bpd_cohort_new_normalw_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_normw_dx_b4index;
+set g.bpd_cohort_new_normw_dx_b4index;
+if eventdate=. then delete;
+run; 
+
+data g.bpd_cohort_new_normw_dx_b4index;
+set g.bpd_cohort_new_normw_dx_b4index;
+bmi_cat=1;
+run;
+
+proc sort data=g.bpd_cohort_new_normw_dx_b4index;
+by id descending eventdate;
+run;
+
+proc sort data=g.bpd_cohort_new_normw_dx_b4index nodupkeys out=normw_id;
+by id;
+run; 
+
+proc sql;
+create table g.normw_not_ahd as
+select * from normw_id
+where id not in (select id from g.bpd_cohort_bmi_ahd_b4index);
+quit; 
+
+data g.normw_not_ahd;
+set g.normw_not_ahd;
+rename eventdate=eventdate_n;
+rename bmi_cat=bmi_cat_n;
+run;
+
+proc sql;
+create table normw_ahd as
+select a.*, b.bmi_cat as bmi_cat_n, b.eventdate as eventdate_n
+from g.bpd_cohort_bmi_ahd_b4index a left join normw_id b
+on a.id=b.id;
+quit;
+
+data bmi_n;
+set normw_ahd g.normw_not_ahd;
+run;
+
+proc sql;
+create table bmi_obe_overw_u_n_status as
+select a.*, b.bmi_cat_n, b.eventdate_n
+from bmi_obe_overw_u_status a left join bmi_n b
+on a.id=b.id;
+quit;
+
+data bmi_obe_overw_u_n_status;
+set bmi_obe_overw_u_n_status;
+if bmi_ahd^=4 && (bmi_cat_obe=. && bmi_cat_over=. && bmi_cat_under=. && bmi_cat_n=.) then bmi_1=bmi_ahd;
+else if bmi_ahd=4 && (bmi_cat_obe^=. && bmi_cat_over=. && bmi_cat_under=. && bmi_cat_n=.) then bmi_1=bmi_cat_obe;
+else if bmi_ahd=4 && (bmi_cat_obe=. && bmi_cat_over^=. && bmi_cat_under=. && bmi_cat_n=.) then bmi_1=bmi_cat_over;
+else if bmi_ahd=4 && (bmi_cat_obe=. && bmi_cat_over=. && bmi_cat_under^=. && bmi_cat_n=.) then bmi_1=bmi_cat_under;
+else if bmi_ahd=4 && (bmi_cat_obe=. && bmi_cat_over=. && bmi_cat_under=. && bmi_cat_n^=.) then bmi_1=bmi_cat_n;
+
+else if bmi_ahd=4 && (bmi_cat_obe^=. && bmi_cat_over^=. && bmi_cat_under=. && bmi_cat_n=.) && (eventdate_obe<eventdate_over) then bmi_1=bmi_cat_over;
+else if bmi_ahd=4 && (bmi_cat_obe^=. && bmi_cat_over^=. && bmi_cat_under=. && bmi_cat_n=.) && (eventdate_obe>eventdate_over) then bmi_1=bmi_cat_obe;
+else if bmi_ahd=4 && (bmi_cat_obe^=. && bmi_cat_over^=. && bmi_cat_under=. && bmi_cat_n=.) && (eventdate_obe=eventdate_over) then bmi_1=bmi_ahd;
+
+else if bmi_ahd=4 && (bmi_cat_obe^=. && bmi_cat_over=. && bmi_cat_under^=. && bmi_cat_n=.) && (eventdate_obe<eventdate_under) then bmi_1=bmi_cat_under;
+else if bmi_ahd=4 && (bmi_cat_obe^=. && bmi_cat_over=. && bmi_cat_under^=. && bmi_cat_n=.) && (eventdate_obe>eventdate_under) then bmi_1=bmi_cat_obe;
+else if bmi_ahd=4 && (bmi_cat_obe^=. && bmi_cat_over=. && bmi_cat_under^=. && bmi_cat_n=.) && (eventdate_obe=eventdate_under) then bmi_1=bmi_ahd;
+
+else if bmi_ahd=4 && (bmi_cat_obe^=. && bmi_cat_over=. && bmi_cat_under=. && bmi_cat_n^=.) && (eventdate_obe<eventdate_n) then bmi_1=bmi_cat_n;
+else if bmi_ahd=4 && (bmi_cat_obe^=. && bmi_cat_over=. && bmi_cat_under=. && bmi_cat_n^=.) && (eventdate_obe>eventdate_n) then bmi_1=bmi_cat_obe;
+else if bmi_ahd=4 && (bmi_cat_obe^=. && bmi_cat_over=. && bmi_cat_under=. && bmi_cat_n^=.) && (eventdate_obe=eventdate_n) then bmi_1=bmi_ahd;
+
+else if bmi_ahd=4 && (bmi_cat_obe=. && bmi_cat_over^=. && bmi_cat_under^=. && bmi_cat_n=.) && (eventdate_over<eventdate_under) then bmi_1=bmi_cat_under;
+else if bmi_ahd=4 && (bmi_cat_obe=. && bmi_cat_over^=. && bmi_cat_under^=. && bmi_cat_n=.) && (eventdate_over>eventdate_under) then bmi_1=bmi_cat_over;
+else if bmi_ahd=4 && (bmi_cat_obe=. && bmi_cat_over^=. && bmi_cat_under^=. && bmi_cat_n=.) && (eventdate_over=eventdate_under) then bmi_1=bmi_ahd;
+
+else if bmi_ahd=4 && (bmi_cat_obe=. && bmi_cat_over^=. && bmi_cat_under=. && bmi_cat_n^=.) && (eventdate_over<eventdate_n) then bmi_1=bmi_cat_n;
+else if bmi_ahd=4 && (bmi_cat_obe=. && bmi_cat_over^=. && bmi_cat_under=. && bmi_cat_n^=.) && (eventdate_over>eventdate_n) then bmi_1=bmi_cat_over;
+else if bmi_ahd=4 && (bmi_cat_obe=. && bmi_cat_over^=. && bmi_cat_under=. && bmi_cat_n^=.) && (eventdate_over=eventdate_n) then bmi_1=bmi_ahd;
+
+else if bmi_ahd=4 && (bmi_cat_obe=. && bmi_cat_over=. && bmi_cat_under^=. && bmi_cat_n^=.) && (eventdate_under<eventdate_n) then bmi_1=bmi_cat_n;
+else if bmi_ahd=4 && (bmi_cat_obe=. && bmi_cat_over=. && bmi_cat_under^=. && bmi_cat_n^=.) && (eventdate_under>eventdate_n) then bmi_1=bmi_cat_under;
+else if bmi_ahd=4 && (bmi_cat_obe=. && bmi_cat_over=. && bmi_cat_under^=. && bmi_cat_n^=.) && (eventdate_under=eventdate_n) then bmi_1=bmi_ahd;
+
+else if bmi_ahd^=4 && (bmi_cat_obe^=. && bmi_cat_over=. && bmi_cat_under=. && bmi_cat_n=.) && dxdate_bmi>=eventdate_obe then bmi_1=bmi_ahd;
+else if bmi_ahd^=4 && (bmi_cat_obe^=. && bmi_cat_over=. && bmi_cat_under=. && bmi_cat_n=.) && dxdate_bmi<eventdate_obe then bmi_1=bmi_cat_obe;
+else if bmi_ahd^=4 && (bmi_cat_obe=. && bmi_cat_over^=. && bmi_cat_under=. && bmi_cat_n=.) && dxdate_bmi>=eventdate_over then bmi_1=bmi_ahd;
+else if bmi_ahd^=4 && (bmi_cat_obe=. && bmi_cat_over^=. && bmi_cat_under=. && bmi_cat_n=.) && dxdate_bmi<eventdate_over then bmi_1=bmi_cat_over;
+else if bmi_ahd^=4 && (bmi_cat_obe=. && bmi_cat_over=. && bmi_cat_under^=. && bmi_cat_n=.) && dxdate_bmi>=eventdate_under then bmi_1=bmi_ahd;
+else if bmi_ahd^=4 && (bmi_cat_obe=. && bmi_cat_over=. && bmi_cat_under^=. && bmi_cat_n=.) && dxdate_bmi<eventdate_under then bmi_1=bmi_cat_under;
+else if bmi_ahd^=4 && (bmi_cat_obe=. && bmi_cat_over=. && bmi_cat_under=. && bmi_cat_n^=.) && dxdate_bmi>=eventdate_n then bmi_1=bmi_ahd;
+else if bmi_ahd^=4 && (bmi_cat_obe=. && bmi_cat_over=. && bmi_cat_under=. && bmi_cat_n^=.) && dxdate_bmi<eventdate_n then bmi_1=bmi_cat_n;
+
+else if bmi_ahd^=4 && (bmi_cat_obe^=. && bmi_cat_over^=. && bmi_cat_under=. && bmi_cat_n=.) && (dxdate_bmi>=eventdate_obe && dxdate_bmi>=eventdate_over) then bmi_1=bmi_ahd;
+else if bmi_ahd^=4 && (bmi_cat_obe^=. && bmi_cat_over^=. && bmi_cat_under=. && bmi_cat_n=.) && (eventdate_obe<=eventdate_over && dxdate_bmi<eventdate_over) then bmi_1=bmi_cat_over;
+else if bmi_ahd^=4 && (bmi_cat_obe^=. && bmi_cat_over^=. && bmi_cat_under=. && bmi_cat_n=.) && (eventdate_over<=eventdate_obe && dxdate_bmi<eventdate_obe) then bmi_1=bmi_cat_obe;
+
+else if bmi_ahd^=4 && (bmi_cat_obe^=. && bmi_cat_over=. && bmi_cat_under^=. && bmi_cat_n=.) && (dxdate_bmi>=eventdate_obe && dxdate_bmi>=eventdate_under) then bmi_1=bmi_ahd;
+else if bmi_ahd^=4 && (bmi_cat_obe^=. && bmi_cat_over=. && bmi_cat_under^=. && bmi_cat_n=.) && (eventdate_obe<=eventdate_under && dxdate_bmi<eventdate_under) then bmi_1=bmi_cat_under;
+else if bmi_ahd^=4 && (bmi_cat_obe^=. && bmi_cat_over=. && bmi_cat_under^=. && bmi_cat_n=.) && (eventdate_under<=eventdate_obe && dxdate_bmi<eventdate_obe) then bmi_1=bmi_cat_obe;
+
+else if bmi_ahd^=4 && (bmi_cat_obe^=. && bmi_cat_over=. && bmi_cat_under=. && bmi_cat_n^=.) && (dxdate_bmi>=eventdate_obe && dxdate_bmi>=eventdate_n) then bmi_1=bmi_ahd;
+else if bmi_ahd^=4 && (bmi_cat_obe^=. && bmi_cat_over=. && bmi_cat_under=. && bmi_cat_n^=.) && (eventdate_obe<=eventdate_n && dxdate_bmi<eventdate_n) then bmi_1=bmi_cat_n;
+else if bmi_ahd^=4 && (bmi_cat_obe^=. && bmi_cat_over=. && bmi_cat_under=. && bmi_cat_n^=.) && (eventdate_n<=eventdate_obe && dxdate_bmi<eventdate_obe) then bmi_1=bmi_cat_obe;
+
+else if bmi_ahd^=4 && (bmi_cat_obe=. && bmi_cat_over^=. && bmi_cat_under^=. && bmi_cat_n=.) && (dxdate_bmi>=eventdate_over && dxdate_bmi>=eventdate_under) then bmi_1=bmi_ahd;
+else if bmi_ahd^=4 && (bmi_cat_obe=. && bmi_cat_over^=. && bmi_cat_under^=. && bmi_cat_n=.) && (eventdate_over<=eventdate_under && dxdate_bmi<eventdate_under) then bmi_1=bmi_cat_under;
+else if bmi_ahd^=4 && (bmi_cat_obe=. && bmi_cat_over^=. && bmi_cat_under^=. && bmi_cat_n=.) && (eventdate_under<=eventdate_over && dxdate_bmi<eventdate_over) then bmi_1=bmi_cat_over;
+
+else if bmi_ahd^=4 && (bmi_cat_obe=. && bmi_cat_over^=. && bmi_cat_under=. && bmi_cat_n^=.) && (dxdate_bmi>=eventdate_over && dxdate_bmi>=eventdate_n) then bmi_1=bmi_ahd;
+else if bmi_ahd^=4 && (bmi_cat_obe=. && bmi_cat_over^=. && bmi_cat_under=. && bmi_cat_n^=.) && (eventdate_over<=eventdate_n && dxdate_bmi<eventdate_n) then bmi_1=bmi_cat_n;
+else if bmi_ahd^=4 && (bmi_cat_obe=. && bmi_cat_over^=. && bmi_cat_under=. && bmi_cat_n^=.) && (eventdate_n<=eventdate_over && dxdate_bmi<eventdate_over) then bmi_1=bmi_cat_over;
+
+else if bmi_ahd^=4 && (bmi_cat_obe=. && bmi_cat_over=. && bmi_cat_under^=. && bmi_cat_n^=.) && (dxdate_bmi>=eventdate_under && dxdate_bmi>=eventdate_n) then bmi_1=bmi_ahd;
+else if bmi_ahd^=4 && (bmi_cat_obe=. && bmi_cat_over=. && bmi_cat_under^=. && bmi_cat_n^=.) && (eventdate_under<=eventdate_n && dxdate_bmi<eventdate_n) then bmi_1=bmi_cat_n;
+else if bmi_ahd^=4 && (bmi_cat_obe=. && bmi_cat_over=. && bmi_cat_under^=. && bmi_cat_n^=.) && (eventdate_n<eventdate_under && dxdate_bmi<eventdate_under) then bmi_1=bmi_cat_under;
+
+
+else if bmi_ahd^=4 && (bmi_cat_obe^=. && bmi_cat_over^=. && bmi_cat_under^=. && bmi_cat_n=.) && (dxdate_bmi>=eventdate_obe && dxdate_bmi>=eventdate_over && dxdate_bmi>=eventdate_under) then bmi_1=bmi_ahd;
+else if bmi_ahd^=4 && (bmi_cat_obe^=. && bmi_cat_over^=. && bmi_cat_under^=. && bmi_cat_n=.) && (eventdate_obe<eventdate_under && eventdate_over<eventdate_under && dxdate_bmi<eventdate_under) then bmi_1=bmi_cat_under;
+else if bmi_ahd^=4 && (bmi_cat_obe^=. && bmi_cat_over^=. && bmi_cat_under^=. && bmi_cat_n=.) && (eventdate_under<eventdate_obe && eventdate_over<eventdate_obe && dxdate_bmi<eventdate_obe) then bmi_1=bmi_cat_obe;
+else if bmi_ahd^=4 && (bmi_cat_obe^=. && bmi_cat_over^=. && bmi_cat_under^=. && bmi_cat_n=.) && (eventdate_under<eventdate_over && eventdate_obe<eventdate_over && dxdate_bmi<eventdate_over) then bmi_1=bmi_cat_over;
+
+else if bmi_ahd^=4 && (bmi_cat_obe^=. && bmi_cat_over^=. && bmi_cat_under=. && bmi_cat_n^=.) && (dxdate_bmi>=eventdate_obe && dxdate_bmi>=eventdate_over && dxdate_bmi>=eventdate_n) then bmi_1=bmi_ahd;
+else if bmi_ahd^=4 && (bmi_cat_obe^=. && bmi_cat_over^=. && bmi_cat_under=. && bmi_cat_n^=.) && (eventdate_obe<eventdate_n && eventdate_over<eventdate_n && dxdate_bmi<eventdate_n) then bmi_1=bmi_cat_n;
+else if bmi_ahd^=4 && (bmi_cat_obe^=. && bmi_cat_over^=. && bmi_cat_under=. && bmi_cat_n^=.) && (eventdate_n<eventdate_obe && eventdate_over<eventdate_obe && dxdate_bmi<eventdate_obe) then bmi_1=bmi_cat_obe;
+else if bmi_ahd^=4 && (bmi_cat_obe^=. && bmi_cat_over^=. && bmi_cat_under=. && bmi_cat_n^=.) && (eventdate_n<eventdate_over && eventdate_obe<eventdate_over && dxdate_bmi<eventdate_over) then bmi_1=bmi_cat_over;
+
+else if bmi_ahd^=4 && (bmi_cat_obe=. && bmi_cat_over^=. && bmi_cat_under^=. && bmi_cat_n^=.) && (dxdate_bmi>=eventdate_over && dxdate_bmi>=eventdate_n && dxdate_bmi>=eventdate_under) then bmi_1=bmi_ahd;
+else if bmi_ahd^=4 && (bmi_cat_obe=. && bmi_cat_over^=. && bmi_cat_under^=. && bmi_cat_n^=.) && (eventdate_over<eventdate_under && eventdate_n<eventdate_under && dxdate_bmi<eventdate_under) then bmi_1=bmi_cat_under;
+else if bmi_ahd^=4 && (bmi_cat_obe=. && bmi_cat_over^=. && bmi_cat_under^=. && bmi_cat_n^=.) && (eventdate_over<eventdate_n && eventdate_under<eventdate_n && dxdate_bmi<eventdate_n) then bmi_1=bmi_cat_n;
+else if bmi_ahd^=4 && (bmi_cat_obe=. && bmi_cat_over^=. && bmi_cat_under^=. && bmi_cat_n^=.) && (eventdate_under<eventdate_over && eventdate_n<eventdate_over && dxdate_bmi<eventdate_over) then bmi_1=bmi_cat_over;
+
+else if bmi_ahd=4 && (bmi_cat_obe=. && bmi_cat_over=. && bmi_cat_under=. && bmi_cat_n=.) then bmi_1=bmi_ahd;
+run;
+
+proc sql;
+create table bpd_cohort_covar_bmi as
+select * from g.bpd_cohort_covar as a left join (select bmi_1 from bmi_obe_overw_u_n_status as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar_bmi;
+run;
+
+
+/*******use data 1 year after index date to speculate the bmi********/;
+data g.missing_bmi;
+set g.bpd_cohort_covar;
+if bmi_1=4;
+run; 
+
+data g.bpd_cohort_bmi_1yr_xb4index;
+set g.bpd_cohort_weight;
+if index_date<dxdate<=365+index_date;
+run; 
+
+proc sort data=g.bpd_cohort_bmi_1yr_xb4index;
+by id dxdate bmi_num;
+run;
+
+data g.bpd_cohort_bmi_1yr_xb4index_xmis;
+set g.bpd_cohort_bmi_1yr_xb4index;
+if missing(bmi_num) or bmi_num=0 then delete;
+run;
+
+proc sort data=g.bpd_cohort_bmi_1yr_xb4index_xmis nodupkeys out=g.bpd_cohort_bmi_ahd_1yr_xb4index;
+by id;
+run;
+
+data g.bpd_cohort_bmi_ahd_1yr_xb4index;
+set g.bpd_cohort_bmi_ahd_1yr_xb4index;
+if bmi_num<18.5 then bmi_cat=0; /*underweight*/
+else if 18.5<=bmi_num<=24.9 then bmi_cat=1; /*normal*/
+else if 25.0<=bmi_num<=29.9 then bmi_cat=2; /*overweight*/
+else if bmi_num>=30.0 then bmi_cat=3; /*obesity*/
+run;
+
+proc freq data=g.bpd_cohort_bmi_ahd_1yr_xb4index;
+table bmi_cat/missing;
+run;
+
+data g.bpd_cohort_height_1yr_xb4index;
+set g.bpd_cohort_height;
+if index_date<dxdate<=index_date+365;
+run;
+
+proc sort data=g.bpd_cohort_height_1yr_xb4index;
+by id dxdate height_num;
+run;
+
+data g.bpd_cohort_height_1yr_xb4index_x;
+set g.bpd_cohort_height_1yr_xb4index;
+if missing(height_num) or height_num=0 then delete;
+run; 
+
+proc sort data=g.bpd_cohort_height_1yr_xb4index_x nodupkeys out=height_id;
+by id;
+run;
+
+data g.bpd_cohort_weight_1yr_xb4index;
+set g.bpd_cohort_weight;
+if index_date<dxdate<=index_date+365;
+run; 
+
+proc sort data=g.bpd_cohort_weight_1yr_xb4index;
+by id dxdate weight_num;
+run;
+
+data g.bpd_cohort_weight_1yr_xb4index_x;
+set g.bpd_cohort_weight_1yr_xb4index;
+if missing(weight_num) or weight_num=0 then delete;
+run; 
+
+proc sort data=g.bpd_cohort_weight_1yr_xb4index_x nodupkeys out=weight_id;
+by id;
+run;
+
+/******calculate bmi using weight and height******/;
+
+proc sql;
+create table bpd_cohort_bmi_cal_1yr_xb4index as
+select * from f.bpd_cohort_ms_xmulti_heads_tf a left join (select height_num from height_id b)
+on a.id=b.id;
+quit;
+
+proc sql;
+create table bpd_cohort_bmi_cal_1yr_w as
+select * from bpd_cohort_bmi_cal_1yr_xb4index a left join (select weight_num, dxdate as dxdate_w from weight_id b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_bmi_cal_1yr_xb4index;
+set bpd_cohort_bmi_cal_1yr_w;
+run;
+
+data g.bpd_cohort_bmi_cal_1yr_xb4index;
+set g.bpd_cohort_bmi_cal_1yr_xb4index;
+bmi_cal=weight_num/(height_num**2);
+run;
+
+proc sql;
+create table bpd_cohort_bmi_cal_1yr_xb4index as
+select * from g.bpd_cohort_bmi_cal_1yr_xb4index a left join (select bmi_num as bmi_num_1yr, dxdate as dxdate_1yr, bmi_cat as bmi_cat_1yr from g.bpd_cohort_bmi_ahd_1yr_xb4index b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_bmi_cal_1yr_xb4index;
+set bpd_cohort_bmi_cal_1yr_xb4index;
+run;
+
+data g.bpd_cohort_bmi_cal_1yr_xb4index;
+set g.bpd_cohort_bmi_cal_1yr_xb4index;
+if bmi_num_1yr<18.5 && bmi_num_1yr^=. then bmi_cat_1yr=0; /*underweight*/
+else if 18.5<=bmi_num_1yr<=24.9 && bmi_num_1yr^=. then bmi_cat_1yr=1; /*normal*/
+else if 25.0<=bmi_num_1yr<=29.9 && bmi_num_1yr^=. then bmi_cat_1yr=2; /*overweight*/
+else if bmi_num_1yr>=30.0 && bmi_num_1yr^=. then bmi_cat_1yr=3; /*obesity*/
+else if bmi_cal<18.5 && bmi_cal^=. then bmi_cat_cal_1yr=0;
+else if 18.5<=bmi_cal<=24.9 && bmi_cal^=. then bmi_cat_cal_1yr=1;
+else if 25.0<=bmi_cal<=29.9 && bmi_cal^=. then bmi_cat_cal_1yr=2; 
+else if bmi_cal>=30.0 && bmi_cal^=. then bmi_cat_cal_1yr=3; 
+run;
+
+data g.bpd_cohort_bmi_cal_1yr_xb4index;
+set g.bpd_cohort_bmi_cal_1yr_xb4index;
+if bmi_cat_1yr=. && bmi_cat_cal_1yr^=. then bmi_ahd_1yr=bmi_cat_cal_1yr;
+else if bmi_cat_1yr^=. then bmi_ahd_1yr=bmi_cat_1yr;
+run; 
+
+data g.bpd_cohort_bmi_cal_1yr_xb4index;
+set g.bpd_cohort_bmi_cal_1yr_xb4index;
+drop dxdate_bmi_1yr dxdate_bmi;
+run;
+
+data g.bpd_cohort_bmi_cal_1yr_xb4index;
+set g.bpd_cohort_bmi_cal_1yr_xb4index;
+if bmi_cat_cal_1yr^=. then dxdate_bmi_1yr=dxdate_w;
+else if bmi_cat_1yr^=. then dxdate_bmi_1yr=dxdate_1yr;
+format dxdate_bmi_1yr date9.;
+run;
+
+data g.bpd_cohort_bmi_cal_1yr_xb4index;
+set g.bpd_cohort_bmi_cal_1yr_xb4index;
+if bmi_ahd_1yr=. then bmi_ahd_1yr=4;
+run;
+
+data g.bpd_cohort_bmi_ahd_1yr_xb4index;
+set g.bpd_cohort_bmi_cal_1yr_xb4index;
+if bmi_ahd_1yr^=4;
+run;
+
+data g.bpd_cohort_new_obese_dx_xb4index;
+set g.bpd_cohort_new_obese_dx;
+if index_date<eventdate<=index_date+365;
+run; 
+
+data g.bpd_cohort_new_obese_dx_xb4index;
+set g.bpd_cohort_new_obese_dx_xb4index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_obese_dx_xb4index;
+set g.bpd_cohort_new_obese_dx_xb4index;
+bmi_cat_obe_1yr=3;
+run;
+
+proc sort data=g.bpd_cohort_new_obese_dx_xb4index;
+by id eventdate;
+run;
+
+proc sort data=g.bpd_cohort_new_obese_dx_xb4index nodupkeys out=obese_id_1yr;
+by id;
+run; 
+
+proc sql;
+create table g.obese_not_ahd_1yr as
+select * from obese_id_1yr
+where id not in (select id from g.bpd_cohort_bmi_ahd_1yr_xb4index);
+quit; 
+
+data g.obese_not_ahd_1yr;
+set g.obese_not_ahd_1yr;
+rename eventdate=eventdate_obe_1yr;
+run;
+
+proc sql;
+create table obese_ahd_1yr as
+select a.*, b.bmi_cat_obe_1yr, b.eventdate as eventdate_obe_1yr
+from g.bpd_cohort_bmi_ahd_1yr_xb4index a left join obese_id_1yr b
+on a.id=b.id;
+quit;
+
+data bmi_obe_1yr;
+set obese_ahd_1yr g.obese_not_ahd_1yr;
+run;
+
+proc sql;
+create table bmi_obe_status_1yr as
+select a.*, b.bmi_cat_obe_1yr, b.eventdate_obe_1yr
+from g.bpd_cohort_bmi_cal_1yr_xb4index a left join bmi_obe_1yr b
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_overw_dx_xb4index;
+set g.bpd_cohort_new_overw_dx;
+if index_date<eventdate<=index_date+365;
+run; 
+
+data g.bpd_cohort_new_overw_dx_xb4index;
+set g.bpd_cohort_new_overw_dx_xb4index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_overw_dx_xb4index;
+set g.bpd_cohort_new_overw_dx_xb4index;
+bmi_cat_over_1yr=2;
+run;
+
+proc sort data=g.bpd_cohort_new_overw_dx_xb4index;
+by id eventdate;
+run;
+
+proc sort data=g.bpd_cohort_new_overw_dx_xb4index nodupkeys out=overw_id_1yr;
+by id;
+run;
+
+proc sql;
+create table g.overw_not_ahd_1yr as
+select * from overw_id_1yr
+where id not in (select id from g.bpd_cohort_bmi_ahd_1yr_xb4index);
+quit; 
+
+data g.overw_not_ahd_1yr;
+set g.overw_not_ahd_1yr;
+rename eventdate=eventdate_over_1yr;
+run;
+
+proc sql;
+create table overw_ahd_1yr as
+select a.*, b.bmi_cat_over_1yr, b.eventdate as eventdate_over_1yr
+from g.bpd_cohort_bmi_ahd_1yr_xb4index a left join overw_id_1yr b
+on a.id=b.id;
+quit;
+
+data bmi_overw_1yr;
+set overw_ahd_1yr g.overw_not_ahd_1yr;
+run;
+
+proc sql;
+create table bmi_obe_over_status_1yr as
+select a.*, b.bmi_cat_over_1yr, b.eventdate_over_1yr
+from bmi_obe_status_1yr a left join bmi_overw_1yr b
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_undew_dx_xb4index;
+set g.bpd_cohort_new_underw_dx;
+if index_date<eventdate<=index_date+365;
+run; 
+
+data g.bpd_cohort_new_undew_dx_xb4index;
+set g.bpd_cohort_new_undew_dx_xb4index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_undew_dx_xb4index;
+set g.bpd_cohort_new_undew_dx_xb4index;
+bmi_cat_under_1yr=0;
+run;
+
+proc sort data=g.bpd_cohort_new_undew_dx_xb4index;
+by id eventdate;
+run;
+
+proc sort data=g.bpd_cohort_new_undew_dx_xb4index nodupkeys out=undew_id_1yr;
+by id;
+run; 
+
+proc sql;
+create table g.underw_not_ahd_1yr as
+select * from undew_id_1yr
+where id not in (select id from g.bpd_cohort_bmi_ahd_1yr_xb4index);
+quit; 
+
+proc sql;
+create table under_ahd_1yr as
+select a.*, b.bmi_cat_under_1yr, b.eventdate as eventdate_under_1yr
+from g.bpd_cohort_bmi_ahd_1yr_xb4index a left join undew_id_1yr b
+on a.id=b.id;
+quit;
+
+data bmi_unde_1yr;
+set under_ahd_1yr g.underw_not_ahd_1yr;
+run;
+
+proc sql;
+create table bmi_obe_over_u_status_1yr as
+select a.*, b.bmi_cat_under_1yr, b.eventdate_under_1yr
+from bmi_obe_over_status_1yr a left join bmi_unde_1yr b
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_normw_dx_xb4index;
+set g.bpd_cohort_new_normalw_dx;
+if index_date<eventdate<=index_date+365;
+run; 
+
+data g.bpd_cohort_new_normw_dx_xb4index;
+set g.bpd_cohort_new_normw_dx_xb4index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_normw_dx_xb4index;
+set g.bpd_cohort_new_normw_dx_xb4index;
+bmi_cat_n_1yr=1;
+run;
+
+proc sort data=g.bpd_cohort_new_normw_dx_xb4index;
+by id eventdate;
+run;
+
+proc sort data=g.bpd_cohort_new_normw_dx_xb4index nodupkeys out=normw_id_1yr;
+by id;
+run; 
+
+proc sql;
+create table g.normw_not_ahd_1yr as
+select * from normw_id_1yr
+where id not in (select id from g.bpd_cohort_bmi_ahd_1yr_xb4index);
+quit; 
+
+data g.normw_not_ahd_1yr;
+set g.normw_not_ahd_1yr;
+rename eventdate=eventdate_n_1yr;
+run;
+
+proc sql;
+create table normw_ahd_1yr as
+select a.*, b.bmi_cat_n_1yr, b.eventdate as eventdate_n_1yr
+from g.bpd_cohort_bmi_ahd_1yr_xb4index a left join normw_id_1yr b
+on a.id=b.id;
+quit;
+
+data bmi_normw_1yr;
+set normw_ahd_1yr g.normw_not_ahd_1yr;
+run;
+
+proc sql;
+create table bmi_obe_over_u_n_status_1yr as
+select a.*, b.bmi_cat_n_1yr, b.eventdate_n_1yr
+from bmi_obe_over_u_status_1yr a left join bmi_normw_1yr b
+on a.id=b.id;
+quit;
+
+data bmi_obe_over_u_n_status_1yr;
+set bmi_obe_over_u_n_status_1yr;
+if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr=.) then bmi_2=bmi_ahd_1yr;
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr=.) then bmi_2=bmi_cat_obe_1yr;
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr=.) then bmi_2=bmi_cat_over_1yr;
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr=.) then bmi_2=bmi_cat_under_1yr;
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr^=.) then bmi_2=bmi_cat_n_1yr;
+
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr=.) && (eventdate_obe_1yr>eventdate_over_1yr) then bmi_2=bmi_cat_over_1yr;
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr=.) && (eventdate_obe_1yr<eventdate_over_1yr) then bmi_2=bmi_cat_obe_1yr;
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr=.) && (eventdate_obe_1yr=eventdate_over_1yr) then bmi_2=bmi_ahd_1yr;
+
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr=.) && (eventdate_obe_1yr>eventdate_under_1yr) then bmi_2=bmi_cat_under_1yr;
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr=.) && (eventdate_obe_1yr<eventdate_under_1yr) then bmi_2=bmi_cat_obe_1yr;
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr=.) && (eventdate_obe_1yr=eventdate_under_1yr) then bmi_2=bmi_ahd_1yr;
+
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr^=.) && (eventdate_obe_1yr>eventdate_n_1yr) then bmi_2=bmi_cat_n_1yr;
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr^=.) && (eventdate_obe_1yr<eventdate_n_1yr) then bmi_2=bmi_cat_obe_1yr;
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr^=.) && (eventdate_obe_1yr=eventdate_n_1yr) then bmi_2=bmi_ahd_1yr;
+
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr=.) && (eventdate_over_1yr>eventdate_under_1yr) then bmi_2=bmi_cat_under_1yr;
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr=.) && (eventdate_over_1yr<eventdate_under_1yr) then bmi_2=bmi_cat_over_1yr;
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr=.) && (eventdate_over_1yr=eventdate_under_1yr) then bmi_2=bmi_ahd_1yr;
+
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr^=.) && (eventdate_over_1yr>eventdate_n_1yr) then bmi_2=bmi_cat_n_1yr;
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr^=.) && (eventdate_over_1yr<eventdate_n_1yr) then bmi_2=bmi_cat_over_1yr;
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr^=.) && (eventdate_over_1yr=eventdate_n_1yr) then bmi_2=bmi_ahd_1yr;
+
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr^=.) && (eventdate_under_1yr>eventdate_n_1yr) then bmi_2=bmi_cat_n_1yr;
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr^=.) && (eventdate_under_1yr<eventdate_n_1yr) then bmi_2=bmi_cat_under_1yr;
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr^=.) && (eventdate_under_1yr=eventdate_n_1yr) then bmi_2=bmi_ahd_1yr;
+
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr=.) && dxdate_bmi_1yr<=eventdate_obe_1yr then bmi_2=bmi_ahd_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr=.) && dxdate_bmi_1yr>eventdate_obe_1yr then bmi_2=bmi_cat_obe_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr=.) && dxdate_bmi_1yr<=eventdate_over_1yr then bmi_2=bmi_ahd_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr=.) && dxdate_bmi_1yr>eventdate_over_1yr then bmi_2=bmi_cat_over_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr=.) && dxdate_bmi_1yr<=eventdate_under_1yr then bmi_2=bmi_ahd_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr=.) && dxdate_bmi_1yr>eventdate_under_1yr then bmi_2=bmi_cat_under_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr^=.) && dxdate_bmi_1yr<=eventdate_n_1yr then bmi_2=bmi_ahd_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr^=.) && dxdate_bmi_1yr>eventdate_n_1yr then bmi_2=bmi_cat_n_1yr;
+
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr=.) && (dxdate_bmi_1yr<=eventdate_obe_1yr && dxdate_bmi_1yr<=eventdate_over_1yr) then bmi_2=bmi_ahd_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr=.) && (eventdate_obe_1yr>=eventdate_over_1yr && dxdate_bmi_1yr>eventdate_over_1yr) then bmi_2=bmi_cat_over_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr=.) && (eventdate_over_1yr>=eventdate_obe_1yr && dxdate_bmi_1yr>eventdate_obe_1yr) then bmi_2=bmi_cat_obe_1yr;
+
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr=.) && (dxdate_bmi_1yr<=eventdate_obe_1yr && dxdate_bmi_1yr<=eventdate_under_1yr) then bmi_2=bmi_ahd_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr=.) && (eventdate_obe_1yr>=eventdate_under_1yr && dxdate_bmi_1yr>eventdate_under_1yr) then bmi_2=bmi_cat_under_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr=.) && (eventdate_under_1yr>=eventdate_obe_1yr && dxdate_bmi_1yr>eventdate_obe_1yr) then bmi_2=bmi_cat_obe_1yr;
+
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr^=.) && (dxdate_bmi_1yr<=eventdate_obe_1yr && dxdate_bmi_1yr<=eventdate_n_1yr) then bmi_2=bmi_ahd_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr^=.) && (eventdate_obe_1yr>=eventdate_n_1yr && dxdate_bmi_1yr>eventdate_n_1yr) then bmi_2=bmi_cat_n_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr^=.) && (eventdate_n_1yr>=eventdate_obe_1yr && dxdate_bmi_1yr>eventdate_obe_1yr) then bmi_2=bmi_cat_obe_1yr;
+
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr=.) && (dxdate_bmi_1yr<=eventdate_over_1yr && dxdate_bmi_1yr<=eventdate_under_1yr) then bmi_2=bmi_ahd_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr=.) && (eventdate_over_1yr>=eventdate_under_1yr && dxdate_bmi_1yr>eventdate_under_1yr) then bmi_2=bmi_cat_under_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr=.) && (eventdate_under_1yr>=eventdate_over_1yr && dxdate_bmi_1yr>eventdate_over_1yr) then bmi_2=bmi_cat_over_1yr;
+
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr^=.) && (dxdate_bmi_1yr<=eventdate_over_1yr && dxdate_bmi_1yr<=eventdate_n_1yr) then bmi_2=bmi_ahd_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr^=.) && (eventdate_over_1yr>=eventdate_n_1yr && dxdate_bmi_1yr>eventdate_n_1yr) then bmi_2=bmi_cat_n_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr^=.) && (eventdate_n_1yr>=eventdate_over_1yr && dxdate_bmi_1yr>eventdate_over_1yr) then bmi_2=bmi_cat_over_1yr;
+
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr^=.) && (dxdate_bmi_1yr<=eventdate_under_1yr && dxdate_bmi_1yr<=eventdate_n_1yr) then bmi_2=bmi_ahd_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr^=.) && (eventdate_under_1yr>=eventdate_n_1yr && dxdate_bmi_1yr>eventdate_n_1yr) then bmi_2=bmi_cat_n_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr^=.) && (eventdate_n_1yr>eventdate_under_1yr && dxdate_bmi_1yr>eventdate_under_1yr) then bmi_2=bmi_cat_under_1yr;
+
+
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr=.) && (dxdate_bmi_1yr<=eventdate_obe_1yr && dxdate_bmi_1yr<=eventdate_over_1yr && dxdate_bmi_1yr<=eventdate_under_1yr) then bmi_2=bmi_ahd_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr=.) && (eventdate_obe_1yr>eventdate_under_1yr && eventdate_over_1yr>eventdate_under_1yr && dxdate_bmi_1yr>eventdate_under_1yr) then bmi_2=bmi_cat_under_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr=.) && (eventdate_under_1yr>eventdate_obe_1yr && eventdate_over_1yr>eventdate_obe_1yr && dxdate_bmi_1yr>eventdate_obe_1yr) then bmi_2=bmi_cat_obe_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr=.) && (eventdate_under_1yr>eventdate_over_1yr && eventdate_obe_1yr>eventdate_over_1yr && dxdate_bmi_1yr>eventdate_over_1yr) then bmi_2=bmi_cat_over_1yr;
+
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr^=.) && (dxdate_bmi_1yr<=eventdate_obe_1yr && dxdate_bmi_1yr<=eventdate_over_1yr && dxdate_bmi_1yr<=eventdate_n_1yr) then bmi_2=bmi_ahd_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr^=.) && (eventdate_obe_1yr>eventdate_n_1yr && eventdate_over_1yr>eventdate_n_1yr && dxdate_bmi_1yr>eventdate_n_1yr) then bmi_2=bmi_cat_n_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr^=.) && (eventdate_n_1yr>eventdate_obe_1yr && eventdate_over_1yr>eventdate_obe_1yr && dxdate_bmi_1yr>eventdate_obe_1yr) then bmi_2=bmi_cat_obe_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr^=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr^=.) && (eventdate_n_1yr>eventdate_over_1yr && eventdate_obe_1yr>eventdate_over_1yr && dxdate_bmi_1yr>eventdate_over_1yr) then bmi_2=bmi_cat_over_1yr;
+
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr^=.) && (dxdate_bmi_1yr<=eventdate_over_1yr && dxdate_bmi_1yr<=eventdate_n_1yr && dxdate_bmi_1yr<=eventdate_under_1yr) then bmi_2=bmi_ahd_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr^=.) && (eventdate_over_1yr>eventdate_under_1yr && eventdate_n_1yr>eventdate_under_1yr && dxdate_bmi_1yr>eventdate_under_1yr) then bmi_2=bmi_cat_under_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr^=.) && (eventdate_over_1yr>eventdate_n_1yr && eventdate_under_1yr>eventdate_n_1yr && dxdate_bmi_1yr>eventdate_n_1yr) then bmi_2=bmi_cat_n_1yr;
+else if bmi_ahd_1yr^=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr^=. && bmi_cat_under_1yr^=. && bmi_cat_n_1yr^=.) && (eventdate_under_1yr>eventdate_over_1yr && eventdate_n_1yr>eventdate_over_1yr && dxdate_bmi_1yr>eventdate_over_1yr) then bmi_2=bmi_cat_over_1yr;
+
+else if bmi_ahd_1yr=4 && (bmi_cat_obe_1yr=. && bmi_cat_over_1yr=. && bmi_cat_under_1yr=. && bmi_cat_n_1yr=.) then bmi_2=bmi_ahd_1yr;
+run;
+
+
+proc sql;
+create table bpd_cohort_covar as
+select a.*, b.bmi_2 
+from g.bpd_cohort_covar_1 a left join bmi_obe_over_u_n_status_1yr b
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+if bmi_1=4 then bmi_f=bmi_2;
+else if bmi_1^=4 then bmi_f=bmi_1;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if bmi_f=0 then bmi_f=5;
+run;
+
+data bmi_dx;
+set undew_id overw_id obese_id normw_id;
+run;
+
+proc sort data=bmi_dx;
+by id eventdate;
+run; 
+
+proc sort data=bmi_dx nodupkeys;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar_bmi_cal_dx as
+select a.*,b.bmi_cat as bmi_cat_1yr_dx from bpd_cohort_covar_bmi_cal a left join bmi_dx b
+on a.id=b.id;
+quit;
+
+data bpd_cohort_covar_bmi_cal_dx;
+set bpd_cohort_covar_bmi_cal_dx;
+if bmi_ahd_1yr=. && bmi_cat_1yr_dx^=. then bmi_f=bmi_cat_1yr_dx;
+else if bmi_ahd_1yr^=. then bmi_f=bmi_ahd_1yr;
+run;
+
+proc sql;
+create table bpd_cohort_covar as
+select a.*, b.bmi_f as bmi_cat_1yr from g.bpd_cohort_covar_1 a left join bpd_cohort_covar_bmi_cal_dx b
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar_1;
+set bpd_cohort_covar;
+if bmi_cat_1yr^=. then bmi_f=bmi_cat_1yr;
+else bmi_f=bmi_cat;
+run;
+
+proc freq data=g.bpd_cohort_covar_1;
+table bmi_f;
+run; 
+
+/***smoking***/ 
+
+data g.bpd_cohort_smoke 
+set g.bpd_cohort_ahd;
+if substr(ahdcode,1,10) in ('1003040000');
+run;
+
+proc sql;
+create table bpd_cohort_smoke as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from g.bpd_cohort_smoke a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_smoke;
+set bpd_cohort_smoke;
+run;
+
+proc freq data=g.bpd_cohort_smoke;
+table data1;
+run;
+
+data g.bpd_cohort_smoke;
+set g.bpd_cohort_smoke;
+rename data1=smoke_ahd;
+run;
+
+data g.bpd_cohort_smoke_b4index;
+set g.bpd_cohort_smoke;
+if dxdate<=index_date;
+run; 
+
+proc sort data=g.bpd_cohort_smoke_b4index;
+by id descending dxdate descending smoke_ahd;
+run;
+
+proc sort data=g.bpd_cohort_smoke_b4index nodupkeys out=g.bpd_cohort_smoke_ahd_b4index;
+by id;
+run; 
+
+proc sql;
+create table f.bpd_dx_smoke as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_smoke);
+quit;
+
+proc sql;
+create table bpd_cohort_new_smoke_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_dx_smoke a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_smoke_dx;
+set bpd_cohort_new_smoke_dx;
+run;
+
+data g.bpd_cohort_new_smoke_dx_b4index;
+set g.bpd_cohort_new_smoke_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_smoke_dx_b4index;
+set g.bpd_cohort_new_smoke_dx_b4index;
+if eventdate=. then delete;
+run; 
+
+data g.bpd_cohort_new_smoke_dx_b4index;
+set g.bpd_cohort_new_smoke_dx_b4index;
+smoke_status_dx='Y';
+run;
+
+proc sort data=g.bpd_cohort_new_smoke_dx_b4index;
+by id descending eventdate;
+run;
+
+proc sort data=g.bpd_cohort_new_smoke_dx_b4index nodupkeys out=smoke_id;
+by id;
+run; 
+
+proc sql;
+create table g.smoke_not_ahd as
+select * from smoke_id
+where id not in (select id from g.bpd_cohort_smoke_ahd_b4index);
+quit; 
+
+data g.smoke_not_ahd;
+set g.smoke_not_ahd;
+rename eventdate=eventdate_y;
+rename smoke_status_dx=smoke_status_dx_y;
+run;
+
+proc sql;
+create table smoke_ahd as
+select a.*, b.smoke_status_dx as smoke_status_dx_y, b.eventdate as eventdate_y
+from g.bpd_cohort_smoke_ahd_b4index a left join smoke_id b
+on a.id=b.id;
+quit;
+
+data smoke_ahd;
+set smoke_ahd;
+drop eventdate sysdate;
+run;
+
+data smoke_y;
+set smoke_ahd g.smoke_not_ahd;
+run;
+
+proc sql;
+create table smoke_y_status as
+select a.*, b.smoke_ahd, b.dxdate, b.smoke_status_dx_y, b.eventdate_y
+from g.bpd_cohort_covar a left join smoke_y b
+on a.id=b.id;
+quit;
+ 
+proc sql;
+create table f.bpd_dx_exsmoke as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_exsmoke);
+quit;
+
+proc sql;
+create table bpd_cohort_new_exsmoke_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_dx_exsmoke a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_exsmoke_dx;
+set bpd_cohort_new_exsmoke_dx;
+run;
+
+data g.bpd_cohort_new_exsmo_dx_b4index;
+set g.bpd_cohort_new_exsmoke_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_exsmo_dx_b4index;
+set g.bpd_cohort_new_exsmo_dx_b4index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_exsmo_dx_b4index;
+set g.bpd_cohort_new_exsmo_dx_b4index;
+smoke_status_dx_d='D';
+run;
+
+proc sort data=g.bpd_cohort_new_exsmo_dx_b4index;
+by id descending eventdate;
+run;
+
+proc sort data=g.bpd_cohort_new_exsmo_dx_b4index nodupkeys out=exsmoke_id;
+by id;
+run; 
+
+
+proc sql;
+create table g.exsmoke_not_ahd as
+select * from exsmoke_id
+where id not in (select id from g.bpd_cohort_smoke_ahd_b4index);
+quit; 
+
+data g.exsmoke_not_ahd;
+set g.exsmoke_not_ahd;
+rename eventdate=eventdate_d;
+run;
+
+proc sql;
+create table exsmoke_ahd as
+select a.*, b.smoke_status_dx_d, b.eventdate as eventdate_d
+from g.bpd_cohort_smoke_ahd_b4index a left join exsmoke_id b
+on a.id=b.id;
+quit;
+
+data exsmoke_ahd;
+set exsmoke_ahd;
+drop eventdate sysdate;
+run;
+
+data smoke_d;
+set exsmoke_ahd g.exsmoke_not_ahd;
+run;
+
+proc sql;
+create table smoke_y_d_status as
+select a.*, b.smoke_status_dx_d, b.eventdate_d
+from smoke_y_status a left join smoke_d b
+on a.id=b.id;
+quit;
+ 
+proc sql;
+create table f.bpd_dx_nonsmoke as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_nonsmoker);
+quit;
+
+proc sql;
+create table bpd_cohort_new_nonsmoke_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_dx_nonsmoke a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_nonsmoke_dx;
+set bpd_cohort_new_nonsmoke_dx;
+run;
+
+data g.bpd_cohort_new_nosmo_dx_b4index;
+set g.bpd_cohort_new_nonsmoke_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_nosmo_dx_b4index;
+set g.bpd_cohort_new_nosmo_dx_b4index;
+if eventdate=. then delete;
+run; 
+
+data g.bpd_cohort_new_nosmo_dx_b4index;
+set g.bpd_cohort_new_nosmo_dx_b4index;
+smoke_status_dx_n='N';
+run;
+
+proc sort data=g.bpd_cohort_new_nosmo_dx_b4index;
+by id descending eventdate;
+run;
+
+proc sort data=g.bpd_cohort_new_nosmo_dx_b4index nodupkeys out=nosmoke_id;
+by id;
+run; 
+
+proc sql;
+create table g.nosmoke_not_ahd as
+select * from nosmoke_id
+where id not in (select id from g.bpd_cohort_smoke_ahd_b4index);
+quit; 
+
+data g.nosmoke_not_ahd;
+set g.nosmoke_not_ahd;
+rename eventdate=eventdate_n;
+run;
+
+proc sql;
+create table nosmoke_ahd as
+select a.*, b.smoke_status_dx_n, b.eventdate as eventdate_n
+from g.bpd_cohort_smoke_ahd_b4index a left join nosmoke_id b
+on a.id=b.id;
+quit;
+
+data nosmoke_ahd;
+set nosmoke_ahd;
+drop eventdate sysdate;
+run;
+
+data smoke_n;
+set nosmoke_ahd g.nosmoke_not_ahd;
+run;
+
+proc sql;
+create table smoke_y_d_n_status as
+select a.*, b.smoke_status_dx_n, b.eventdate_n
+from smoke_y_d_status a left join smoke_n b
+on a.id=b.id;
+quit;
+
+data smoke_y_d_n_status;
+set smoke_y_d_n_status;
+if smoke_ahd^=' ' && (smoke_status_dx_y=' ' && smoke_status_dx_d=' ' && smoke_status_dx_n=' ') then smoke_1=smoke_ahd;
+else if smoke_ahd=' ' && (smoke_status_dx_y^=' ' && smoke_status_dx_d=' ' && smoke_status_dx_n=' ') then smoke_1=smoke_status_dx_y;
+else if smoke_ahd=' ' && (smoke_status_dx_y=' ' && smoke_status_dx_d^=' ' && smoke_status_dx_n=' ') then smoke_1=smoke_status_dx_d;
+else if smoke_ahd=' ' && (smoke_status_dx_y=' ' && smoke_status_dx_d=' ' && smoke_status_dx_n^=' ') then smoke_1=smoke_status_dx_n;
+else if smoke_ahd^=' ' && smoke_status_dx_y^=' ' && smoke_ahd=smoke_status_dx_y then smoke_1=smoke_ahd;
+else if smoke_ahd^=' ' && smoke_status_dx_y^=' ' && smoke_ahd^=smoke_status_dx_y && dxdate>=eventdate_y then smoke_1=smoke_ahd;
+else if smoke_ahd^=' ' && smoke_status_dx_y^=' ' && smoke_ahd^=smoke_status_dx_y && dxdate<eventdate_y then smoke_1=smoke_status_dx_y;
+else if smoke_ahd^=' ' && smoke_status_dx_d^=' ' && smoke_ahd=smoke_status_dx_d then smoke_1=smoke_ahd;
+else if smoke_ahd^=' ' && smoke_status_dx_d^=' ' && smoke_ahd^=smoke_status_dx_d && dxdate>=eventdate_d then smoke_1=smoke_ahd;
+else if smoke_ahd^=' ' && smoke_status_dx_d^=' ' && smoke_ahd^=smoke_status_dx_d && dxdate<eventdate_d then smoke_1=smoke_status_dx_d;
+else if smoke_ahd^=' ' && smoke_status_dx_n^=' ' && smoke_ahd=smoke_status_dx_n then smoke_1=smoke_ahd;
+else if smoke_ahd^=' ' && smoke_status_dx_n^=' ' && smoke_ahd^=smoke_status_dx_n && dxdate>=eventdate_n then smoke_1=smoke_ahd;
+else if smoke_ahd^=' ' && smoke_status_dx_n^=' ' && smoke_ahd^=smoke_status_dx_n && dxdate<eventdate_n then smoke_1=smoke_status_dx_n;
+run;
+
+data smoke_y_d_n_status;
+set smoke_y_d_n_status;
+if smoke_1=' ' then smoke_1='U';
+run;
+
+proc sql;
+create table bpd_cohort_covar_smoke as
+select * from g.bpd_cohort_covar as a left join (select smoke_1 from smoke_y_d_n_status as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar_smoke;
+run;
+
+proc freq data=g.bpd_cohort_covar;
+table smoke_1;
+run;
+
+/*******use data 1 yr after index date to speculate missing smoking status********/;
+
+data g.missing_smoke;
+set g.bpd_cohort_covar;
+if smoke_1='U';
+run; 
+
+data g.bpd_cohort_smoke_1yr_xb4index;
+set g.bpd_cohort_smoke;
+if index_date<dxdate<=index_date+365;
+run;
+
+proc sort data=g.bpd_cohort_smoke_1yr_xb4index;
+by id dxdate smoke_ahd;
+run;
+
+proc sort data=g.bpd_cohort_smoke_1yr_xb4index nodupkeys out=g.bpd_cohort_smoke_1yr_xb4index_id;
+by id;
+run;
+
+proc sql;
+create table bpd_cohort_covar_smoke as
+select a.*,b.smoke_ahd as smoke_1yr, b.dxdate from g.missing_smoke a left join g.bpd_cohort_smoke_1yr_xb4index_id b
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_smoke_dx_xb4index;
+set g.bpd_cohort_new_smoke_dx;
+if index_date<eventdate<=index_date+365;
+run; 
+
+data g.bpd_cohort_new_smoke_dx_xb4index;
+set g.bpd_cohort_new_smoke_dx_xb4index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_smoke_dx_xb4index;
+set g.bpd_cohort_new_smoke_dx_xb4index;
+smoke_status_dx_1yr='Y';
+run;
+
+proc sort data=g.bpd_cohort_new_smoke_dx_xb4index;
+by id eventdate;
+run;
+
+proc sort data=g.bpd_cohort_new_smoke_dx_xb4index nodupkeys out=smoke_id_1yr;
+by id;
+run; 
+
+proc sql;
+create table g.smoke_not_ahd_1yr as
+select * from smoke_id_1yr
+where id not in (select id from g.bpd_cohort_smoke_1yr_xb4index_id);
+quit; 
+
+data g.smoke_not_ahd_1yr;
+set g.smoke_not_ahd_1yr;
+rename eventdate=eventdate_y_1yr;
+rename smoke_status_dx_1yr=smoke_status_dx_y_1yr;
+run;
+
+proc sql;
+create table smoke_ahd_1yr as
+select a.*, b.smoke_status_dx_1yr as smoke_status_dx_y_1yr, b.eventdate as eventdate_y_1yr
+from g.bpd_cohort_smoke_1yr_xb4index_id a left join smoke_id_1yr b
+on a.id=b.id;
+quit;
+
+data smoke_ahd_1yr;
+set smoke_ahd_1yr;
+drop eventdate sysdate;
+run;
+
+data smoke_y_1yr;
+set smoke_ahd_1yr g.smoke_not_ahd_1yr;
+run;
+
+proc sql;
+create table smoke_y_status_1yr as
+select a.*, b.smoke_ahd, b.dxdate, b.smoke_status_dx_y_1yr, b.eventdate_y_1yr
+from g.missing_smoke a left join smoke_y_1yr b
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_exsmo_dx_xb4index;
+set g.bpd_cohort_new_exsmoke_dx;
+if index_date<eventdate<=index_date+365;
+run; 
+
+data g.bpd_cohort_new_exsmo_dx_xb4index;
+set g.bpd_cohort_new_exsmo_dx_xb4index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_exsmo_dx_xb4index;
+set g.bpd_cohort_new_exsmo_dx_xb4index;
+smoke_status_dx_d='D';
+run;
+
+proc sort data=g.bpd_cohort_new_exsmo_dx_xb4index;
+by id eventdate;
+run;
+
+proc sort data=g.bpd_cohort_new_exsmo_dx_xb4index nodupkeys out=exsmoke_id_1yr;
+by id;
+run; 
+
+proc sql;
+create table g.exsmoke_not_ahd_1yr as
+select * from exsmoke_id_1yr
+where id not in (select id from g.bpd_cohort_smoke_1yr_xb4index_id);
+quit;
+
+data g.exsmoke_not_ahd_1yr;
+set g.exsmoke_not_ahd_1yr;
+rename eventdate=eventdate_d;
+run;
+
+proc sql;
+create table exsmoke_ahd_1yr as
+select a.*, b.smoke_status_dx_d, b.eventdate as eventdate_d
+from g.bpd_cohort_smoke_1yr_xb4index_id a left join exsmoke_id_1yr b
+on a.id=b.id;
+quit;
+
+data exsmoke_ahd_1yr;
+set exsmoke_ahd_1yr;
+drop eventdate sysdate;
+run;
+
+data smoke_d_1yr;
+set exsmoke_ahd_1yr g.exsmoke_not_ahd_1yr;
+run;
+
+proc sql;
+create table smoke_y_d_status_1yr as
+select a.*, b.smoke_status_dx_d, b.eventdate_d
+from smoke_y_status_1yr a left join smoke_d_1yr b
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_nosmo_dx_xb4index;
+set g.bpd_cohort_new_nonsmoke_dx;
+if index_date<eventdate<=index_date+365;
+run; 
+
+data g.bpd_cohort_new_nosmo_dx_xb4index;
+set g.bpd_cohort_new_nosmo_dx_xb4index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_nosmo_dx_xb4index;
+set g.bpd_cohort_new_nosmo_dx_xb4index;
+smoke_status_dx_n='N';
+run;
+
+proc sort data=g.bpd_cohort_new_nosmo_dx_xb4index;
+by id eventdate;
+run;
+
+proc sort data=g.bpd_cohort_new_nosmo_dx_xb4index nodupkeys out=nosmoke_id_1yr;
+by id;
+run;
+
+proc sql;
+create table g.nosmoke_not_ahd_1yr as
+select * from nosmoke_id_1yr
+where id not in (select id from g.bpd_cohort_smoke_1yr_xb4index_id);
+quit; 
+
+data g.nosmoke_not_ahd_1yr;
+set g.nosmoke_not_ahd_1yr;
+rename eventdate=eventdate_n;
+run;
+
+proc sql;
+create table nosmoke_ahd_1yr as
+select a.*, b.smoke_status_dx_n, b.eventdate as eventdate_n
+from g.bpd_cohort_smoke_1yr_xb4index_id a left join nosmoke_id_1yr b
+on a.id=b.id;
+quit;
+
+data nosmoke_ahd_1yr;
+set nosmoke_ahd_1yr;
+drop eventdate sysdate;
+run;
+
+data smoke_n_1yr;
+set nosmoke_ahd_1yr g.nosmoke_not_ahd_1yr;
+run;
+
+proc sql;
+create table smoke_y_d_n_status_1yr as
+select a.*, b.smoke_status_dx_n, b.eventdate_n
+from smoke_y_d_status_1yr a left join smoke_n_1yr b
+on a.id=b.id;
+quit;
+
+data smoke_y_d_n_status_1yr;
+set smoke_y_d_n_status_1yr;
+if smoke_ahd^=' ' && (smoke_status_dx_y_1yr=' ' && smoke_status_dx_d=' ' && smoke_status_dx_n=' ') then smoke_2=smoke_ahd;
+else if smoke_ahd=' ' && (smoke_status_dx_y_1yr^=' ' && smoke_status_dx_d=' ' && smoke_status_dx_n=' ') then smoke_2=smoke_status_dx_y_1yr;
+else if smoke_ahd=' ' && (smoke_status_dx_y_1yr=' ' && smoke_status_dx_d^=' ' && smoke_status_dx_n=' ') then smoke_2=smoke_status_dx_d;
+else if smoke_ahd=' ' && (smoke_status_dx_y_1yr=' ' && smoke_status_dx_d=' ' && smoke_status_dx_n^=' ') then smoke_2=smoke_status_dx_n;
+else if smoke_ahd^=' ' && smoke_status_dx_y_1yr^=' ' && smoke_ahd=smoke_status_dx_y_1yr then smoke_2=smoke_ahd;
+else if smoke_ahd^=' ' && smoke_status_dx_y_1yr^=' ' && smoke_ahd^=smoke_status_dx_y_1yr && dxdate<=eventdate_y_1yr then smoke_2=smoke_ahd;
+else if smoke_ahd^=' ' && smoke_status_dx_y_1yr^=' ' && smoke_ahd^=smoke_status_dx_y_1yr && dxdate>eventdate_y_1yr then smoke_2=smoke_status_dx_y_1yr;
+else if smoke_ahd^=' ' && smoke_status_dx_d^=' ' && smoke_ahd=smoke_status_dx_d then smoke_2=smoke_ahd;
+else if smoke_ahd^=' ' && smoke_status_dx_d^=' ' && smoke_ahd^=smoke_status_dx_d && dxdate<=eventdate_d then smoke_2=smoke_ahd;
+else if smoke_ahd^=' ' && smoke_status_dx_d^=' ' && smoke_ahd^=smoke_status_dx_d && dxdate>eventdate_d then smoke_2=smoke_status_dx_d;
+else if smoke_ahd^=' ' && smoke_status_dx_n^=' ' && smoke_ahd=smoke_status_dx_n then smoke_2=smoke_ahd;
+else if smoke_ahd^=' ' && smoke_status_dx_n^=' ' && smoke_ahd^=smoke_status_dx_n && dxdate<=eventdate_n then smoke_2=smoke_ahd;
+else if smoke_ahd^=' ' && smoke_status_dx_n^=' ' && smoke_ahd^=smoke_status_dx_n && dxdate>eventdate_n then smoke_2=smoke_status_dx_n;
+run;
+
+data smoke_y_d_n_status_1yr;
+set smoke_y_d_n_status_1yr;
+if smoke_2=' ' then smoke_2='U';
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+drop smoke_2 smoke_f;
+run;
+
+proc sql;
+create table bpd_cohort_covar as
+select a.*, b.smoke_2 
+from g.bpd_cohort_covar a left join smoke_y_d_n_status_1yr b
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+if smoke_1=' ' && smoke_2=' ' then smoke_f='U';
+else if smoke_1^='U' && smoke_1^=' ' then smoke_f=smoke_1;
+else if smoke_1='U' && smoke_2^=' ' then smoke_f=smoke_2;
+run;
+
+
+/*alcohol use*/
+data g.bpd_cohort_alcohol /*data1=types of alcohol drinkers*/;
+set g.bpd_cohort_ahd;
+if substr(ahdcode,1,10) in ('1003050000');
+run;
+
+proc sql;
+create table bpd_cohort_alco as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from g.bpd_cohort_alcohol a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit; 
+
+data g.bpd_cohort_alco;
+set bpd_cohort_alco;
+run;
+
+data g.bpd_cohort_alco;
+set g.bpd_cohort_alco;
+rename data1=alco_status;
+run;
+
+data g.bpd_cohort_alco_b4index;
+set g.bpd_cohort_alco;
+if dxdate<=index_date;
+run; 
+
+proc sort data=g.bpd_cohort_alco_b4index;
+by id descending dxdate descending alco_status;
+run;
+
+proc sort data=g.bpd_cohort_alco_b4index nodupkeys out=g.bpd_cohort_alco_ahd_b4index;
+by id;
+run;
+
+proc sql;
+create table f.bpd_dx_alco as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_alcohol);
+quit;
+
+proc sql;
+create table bpd_cohort_new_alco_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_dx_alco a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_alco_dx;
+set bpd_cohort_new_alco_dx;
+run;
+
+data g.bpd_cohort_new_alco_dx_b4index;
+set g.bpd_cohort_new_alco_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_alco_dx_b4index;
+set g.bpd_cohort_new_alco_dx_b4index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_alco_dx_b4index;
+set g.bpd_cohort_new_alco_dx_b4index;
+alco_status_dx='Y';
+run;
+
+proc sort data=g.bpd_cohort_new_alco_dx_b4index;
+by id descending eventdate;
+run;
+
+proc sort data=g.bpd_cohort_new_alco_dx_b4index nodupkeys out=alco_id;
+by id;
+run; 
+
+proc sql;
+create table g.alco_not_ahd as
+select * from alco_id
+where id not in (select id from g.bpd_cohort_alco_ahd_b4index);
+quit; 
+
+data g.alco_not_ahd;
+set g.alco_not_ahd;
+rename eventdate=eventdate_y;
+rename alco_status_dx=alco_status_dx_y;
+run;
+
+proc sql;
+create table alco_ahd as
+select a.*, b.alco_status_dx as alco_status_dx_y, b.eventdate as eventdate_y
+from g.bpd_cohort_alco_ahd_b4index a left join alco_id b
+on a.id=b.id;
+quit;
+
+data alco_ahd;
+set alco_ahd;
+drop eventdate sysdate;
+run;
+
+data alco_y;
+set alco_ahd g.alco_not_ahd;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+drop alco_1 alco_2 alco_f;
+run;
+
+proc sql;
+create table alco_y_status as
+select a.*, b.alco_status, b.dxdate, b.alco_status_dx_y, b.eventdate_y
+from g.bpd_cohort_covar a left join alco_y b
+on a.id=b.id;
+quit;
+
+proc sql;
+create table f.bpd_dx_exalco as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_exdrinker);
+quit;
+
+proc sql;
+create table bpd_cohort_new_exalco_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_dx_exalco a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_exalco_dx;
+set bpd_cohort_new_exalco_dx;
+run;
+
+data g.bpd_cohort_new_exalc_dx_b4index;
+set g.bpd_cohort_new_exalco_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_exalc_dx_b4index;
+set g.bpd_cohort_new_exalc_dx_b4index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_exalc_dx_b4index;
+set g.bpd_cohort_new_exalc_dx_b4index;
+alco_status_dx_d='D';
+run;
+
+proc sort data=g.bpd_cohort_new_exalc_dx_b4index;
+by id descending eventdate;
+run;
+
+proc sort data=g.bpd_cohort_new_exalc_dx_b4index nodupkeys out=exalco_id;
+by id;
+run; 
+
+proc sql;
+create table g.exalco_not_ahd as
+select * from exalco_id
+where id not in (select id from g.bpd_cohort_alco_ahd_b4index);
+quit; 
+
+data g.exalco_not_ahd;
+set g.exalco_not_ahd;
+rename eventdate=eventdate_d;
+run;
+
+proc sql;
+create table exalco_ahd as
+select a.*, b.alco_status_dx_d, b.eventdate as eventdate_d
+from g.bpd_cohort_alco_ahd_b4index a left join exalco_id b
+on a.id=b.id;
+quit;
+
+data exalco_ahd;
+set exalco_ahd;
+drop sysdate;
+run;
+
+data alco_d;
+set exalco_ahd g.exalco_not_ahd;
+run;
+
+proc sql;
+create table alco_y_d_status as
+select a.*, b.alco_status_dx_d, b.eventdate_d
+from alco_y_status a left join alco_d b
+on a.id=b.id;
+quit;
+
+proc sql;
+create table f.bpd_dx_nonalco as
+select * from f.bpd_cohort_all_dx_new 
+where medcode in (select medcode from f.readcode_nondrinker);
+quit;
+
+proc sql;
+create table bpd_cohort_new_nonalco_dx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_dx_nonalco a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_nonalco_dx;
+set bpd_cohort_new_nonalco_dx;
+run;
+
+data g.bpd_cohort_new_noalc_dx_b4index;
+set g.bpd_cohort_new_nonalco_dx;
+if eventdate<=index_date;
+run; 
+
+data g.bpd_cohort_new_noalc_dx_b4index;
+set g.bpd_cohort_new_noalc_dx_b4index;
+if eventdate=. then delete;
+run; 
+
+data g.bpd_cohort_new_noalc_dx_b4index;
+set g.bpd_cohort_new_noalc_dx_b4index;
+alco_status_dx_n='N';
+run;
+
+proc sort data=g.bpd_cohort_new_noalc_dx_b4index;
+by id descending eventdate;
+run;
+
+proc sort data=g.bpd_cohort_new_noalc_dx_b4index nodupkeys out=noalco_id;
+by id;
+run; 
+
+proc sql;
+create table g.noalco_not_ahd as
+select * from noalco_id
+where id not in (select id from g.bpd_cohort_alco_ahd_b4index);
+quit; 
+
+data g.noalco_not_ahd;
+set g.noalco_not_ahd;
+rename eventdate=eventdate_n;
+run;
+
+proc sql;
+create table noalco_ahd as
+select a.*, b.alco_status_dx_n, b.eventdate as eventdate_n
+from g.bpd_cohort_alco_ahd_b4index a left join noalco_id b
+on a.id=b.id;
+quit;
+
+data noalco_ahd;
+set noalco_ahd;
+drop sysdate;
+run;
+
+data alco_n;
+set noalco_ahd g.noalco_not_ahd;
+run;
+
+proc sql;
+create table alco_y_d_n_status as
+select a.*, b.alco_status_dx_n, b.eventdate_n
+from alco_y_d_status a left join alco_n b
+on a.id=b.id;
+quit;
+
+data alco_y_d_n_status;
+set alco_y_d_n_status;
+if alco_status^=' ' && (alco_status_dx_y=' ' && alco_status_dx_d=' ' && alco_status_dx_n=' ') then alco_1=alco_status;
+else if alco_status=' ' && (alco_status_dx_y^=' ' && alco_status_dx_d=' ' && alco_status_dx_n=' ') then alco_1=alco_status_dx_y;
+else if alco_status=' ' && (alco_status_dx_y=' ' && alco_status_dx_d^=' ' && alco_status_dx_n=' ') then alco_1=alco_status_dx_d;
+else if alco_status=' ' && (alco_status_dx_y=' ' && alco_status_dx_d=' ' && alco_status_dx_n^=' ') then alco_1=alco_status_dx_n;
+
+else if alco_status^=' ' && alco_status_dx_y^=' ' && alco_status_dx_d=' ' && alco_status_dx_n=' ' && alco_status=alco_status_dx_y then alco_1=alco_status;
+else if alco_status^=' ' && alco_status_dx_y^=' ' && alco_status_dx_d=' ' && alco_status_dx_n=' ' && alco_status^=alco_status_dx_y && dxdate>=eventdate_y then alco_1=alco_status;
+else if alco_status^=' ' && alco_status_dx_y^=' ' && alco_status_dx_d=' ' && alco_status_dx_n=' ' && alco_status^=alco_status_dx_y && dxdate<eventdate_y then alco_1=alco_status_dx_y;
+
+else if alco_status^=' ' && alco_status_dx_d^=' ' && alco_status_dx_y=' ' && alco_status_dx_n=' ' && alco_status=alco_status_dx_d then alco_1=alco_status;
+else if alco_status^=' ' && alco_status_dx_d^=' ' && alco_status_dx_y=' ' && alco_status_dx_n=' ' && alco_status^=alco_status_dx_d && dxdate>=eventdate_d then alco_1=alco_status;
+else if alco_status^=' ' && alco_status_dx_d^=' ' && alco_status_dx_y=' ' && alco_status_dx_n=' ' && alco_status^=alco_status_dx_d && dxdate<eventdate_d then alco_1=alco_status_dx_d;
+else if alco_status^=' ' && alco_status_dx_n^=' ' && alco_status_dx_d=' ' && alco_status_dx_y=' ' && alco_status=alco_status_dx_n then alco_1=alco_status;
+else if alco_status^=' ' && alco_status_dx_n^=' ' && alco_status_dx_d=' ' && alco_status_dx_y=' ' && alco_status^=alco_status_dx_n && dxdate>=eventdate_n then alco_1=alco_status;
+else if alco_status^=' ' && alco_status_dx_n^=' ' && alco_status_dx_d=' ' && alco_status_dx_y=' ' && alco_status^=alco_status_dx_n && dxdate<eventdate_n then alco_1=alco_status_dx_n;
+else if alco_status^=' ' && alco_status_dx_y^=' ' && alco_status_dx_d^=' ' && alco_status_dx_n=' ' && alco_status=alco_status_dx_y=alco_status_dx_d then alco_1=alco_status;
+else if alco_status^=' ' && alco_status_dx_y^=' ' && alco_status_dx_d^=' ' && alco_status_dx_n=' ' && alco_status^=alco_status_dx_y^=alco_status_dx_d && (dxdate>=eventdate_y && dxdate>=eventdate_d) then alco_1=alco_status;
+else if alco_status^=' ' && alco_status_dx_y^=' ' && alco_status_dx_d^=' ' && alco_status_dx_n=' ' && alco_status^=alco_status_dx_y^=alco_status_dx_d && (eventdate_y<eventdate_d && dxdate<eventdate_d) then alco_1=alco_status_dx_d;
+else if alco_status^=' ' && alco_status_dx_y^=' ' && alco_status_dx_d^=' ' && alco_status_dx_n=' ' && alco_status^=alco_status_dx_y^=alco_status_dx_d && (eventdate_d<eventdate_y && dxdate<eventdate_y) then alco_1=alco_status_dx_y;
+
+else if alco_status^=' ' && alco_status_dx_y^=' ' && alco_status_dx_d^=' ' && alco_status_dx_n=' ' && alco_status=alco_status_dx_y=alco_status_dx_d then alco_1=alco_status;
+else if alco_status^=' ' && alco_status_dx_y^=' ' && alco_status_dx_d^=' ' && alco_status_dx_n=' ' && alco_status=alco_status_dx_y^=alco_status_dx_d && (dxdate>=eventdate_y && dxdate>=eventdate_d) then alco_1=alco_status;
+else if alco_status^=' ' && alco_status_dx_y^=' ' && alco_status_dx_d^=' ' && alco_status_dx_n=' ' && alco_status=alco_status_dx_y^=alco_status_dx_d && (eventdate_y<eventdate_d && dxdate<eventdate_d) then alco_1=alco_status_dx_d;
+else if alco_status^=' ' && alco_status_dx_y^=' ' && alco_status_dx_d^=' ' && alco_status_dx_n=' ' && alco_status=alco_status_dx_y^=alco_status_dx_d && (eventdate_d<eventdate_y && dxdate<eventdate_y) then alco_1=alco_status_dx_y;
+
+
+
+
+else if alco_status^=' ' && alco_status_dx_y^=' ' && alco_status_dx_d=' ' && alco_status_dx_n^=' ' && alco_status=alco_status_dx_y=alco_status_dx_n then alco_1=alco_status;
+else if alco_status^=' ' && alco_status_dx_y^=' ' && alco_status_dx_d=' ' && alco_status_dx_n^=' ' && (dxdate>=eventdate_n && dxdate>=eventdate_y) then alco_1=alco_status;
+else if alco_status^=' ' && alco_status_dx_y^=' ' && alco_status_dx_d=' ' && alco_status_dx_n^=' ' && (eventdate_n<eventdate_y && dxdate<eventdate_y) then alco_1=alco_status_dx_y;
+else if alco_status^=' ' && alco_status_dx_y^=' ' && alco_status_dx_d=' ' && alco_status_dx_n^=' ' && (eventdate_y<eventdate_n && dxdate<eventdate_n) then alco_1=alco_status_dx_n;
+
+else if alco_status^=' ' && alco_status_dx_y=' ' && alco_status_dx_d^=' ' && alco_status_dx_n^=' ' && alco_status=alco_status_dx_d=alco_status_dx_n then alco_1=alco_status;
+else if alco_status^=' ' && alco_status_dx_y=' ' && alco_status_dx_d^=' ' && alco_status_dx_n^=' ' && alco_status^=alco_status_dx_d^=alco_status_dx_n && (dxdate>=eventdate_n && dxdate>=eventdate_d) then alco_1=alco_status;
+else if alco_status^=' ' && alco_status_dx_y=' ' && alco_status_dx_d^=' ' && alco_status_dx_n^=' ' && alco_status^=alco_status_dx_d^=alco_status_dx_n && (eventdate_n<eventdate_d && dxdate<eventdate_d) then alco_1=alco_status_dx_d;
+else if alco_status^=' ' && alco_status_dx_y=' ' && alco_status_dx_d^=' ' && alco_status_dx_n^=' ' && alco_status^=alco_status_dx_d^=alco_status_dx_n && (eventdate_d<eventdate_n && dxdate<eventdate_n) then alco_1=alco_status_dx_n;
+run;
+
+data alco_y_d_n_status;
+set alco_y_d_n_status;
+if alco_1=' ' then alco_1='U';
+run;
+
+proc sql;
+create table bpd_cohort_covar_alco as
+select * from g.bpd_cohort_covar as a left join (select alco_1 from alco_y_d_n_status as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar_alco;
+run;
+
+
+/*******use data 1 yr after index date to speculate missing alcohol drinking status********/;
+
+data g.missing_alco;
+set g.bpd_cohort_covar;
+if alco_1='U';
+run; 
+
+data g.bpd_cohort_alco_1yr_xb4index;
+set g.bpd_cohort_alco;
+if index_date<dxdate<=index_date+365;
+run;
+
+proc sort data=g.bpd_cohort_alco_1yr_xb4index;
+by id dxdate alco_status;
+run;
+
+proc sort data=g.bpd_cohort_alco_1yr_xb4index nodupkeys out=g.bpd_cohort_alco_1yr_xb4index_id;
+by id;
+run;
+
+proc sql;
+create table bpd_cohort_covar_alco as
+select a.*,b.alco_status as alco_1yr, b.dxdate from g.missing_alco a left join g.bpd_cohort_alco_1yr_xb4index_id b
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_alco_dx_xb4index;
+set g.bpd_cohort_new_alco_dx;
+if index_date<eventdate<=index_date+365;
+run; 
+
+data g.bpd_cohort_new_alco_dx_xb4index;
+set g.bpd_cohort_new_alco_dx_xb4index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_alco_dx_xb4index;
+set g.bpd_cohort_new_alco_dx_xb4index;
+alco_status_dx_1yr='Y';
+run;
+
+proc sort data=g.bpd_cohort_new_alco_dx_xb4index;
+by id eventdate;
+run;
+
+proc sort data=g.bpd_cohort_new_alco_dx_xb4index nodupkeys out=alco_id_1yr;
+by id;
+run; 
+
+proc sql;
+create table g.alco_not_ahd_1yr as
+select * from alco_id_1yr
+where id not in (select id from g.bpd_cohort_alco_1yr_xb4index_id);
+quit; 
+
+data g.alco_not_ahd_1yr;
+set g.alco_not_ahd_1yr;
+rename eventdate=eventdate_y_1yr;
+rename alco_status_dx_1yr=alco_status_dx_y_1yr;
+run;
+
+proc sql;
+create table alco_ahd_1yr as
+select a.*, b.alco_status_dx_1yr as alco_status_dx_y_1yr, b.eventdate as eventdate_y_1yr
+from g.bpd_cohort_alco_1yr_xb4index_id a left join alco_id_1yr b
+on a.id=b.id;
+quit;
+
+data alco_ahd_1yr;
+set alco_ahd_1yr;
+drop eventdate sysdate;
+run;
+
+data alco_y_1yr;
+set alco_ahd_1yr g.alco_not_ahd_1yr;
+run;
+
+proc sql;
+create table alco_y_status_1yr as
+select a.*, b.alco_status, b.dxdate, b.alco_status_dx_y_1yr, b.eventdate_y_1yr
+from g.missing_alco a left join alco_y_1yr b
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_exalc_dx_xb4index;
+set g.bpd_cohort_new_exalco_dx;
+if index_date<eventdate<=index_date+365;
+run; 
+
+data g.bpd_cohort_new_exalc_dx_xb4index;
+set g.bpd_cohort_new_exalc_dx_xb4index;
+if eventdate=. then delete;
+run;
+
+data g.bpd_cohort_new_exalc_dx_xb4index;
+set g.bpd_cohort_new_exalc_dx_xb4index;
+alco_status_dx_d='D';
+run;
+
+proc sort data=g.bpd_cohort_new_exalc_dx_xb4index;
+by id eventdate;
+run;
+
+proc sort data=g.bpd_cohort_new_exalc_dx_xb4index nodupkeys out=exalco_id_1yr;
+by id;
+run; 
+
+proc sql;
+create table g.exalco_not_ahd_1yr as
+select * from exalco_id_1yr
+where id not in (select id from g.bpd_cohort_alco_1yr_xb4index_id);
+quit; 
+
+data g.exalco_not_ahd_1yr;
+set g.exalco_not_ahd_1yr;
+rename eventdate=eventdate_d;
+run;
+
+proc sql;
+create table exalco_ahd_1yr as
+select a.*, b.alco_status_dx_d, b.eventdate as eventdate_d
+from g.bpd_cohort_alco_1yr_xb4index_id a left join exalco_id_1yr b
+on a.id=b.id;
+quit;
+
+data exalco_ahd_1yr;
+set exalco_ahd_1yr;
+drop eventdate sysdate;
+run;
+
+data alco_d_1yr;
+set exalco_ahd_1yr g.exalco_not_ahd_1yr;
+run;
+
+proc sql;
+create table alco_y_d_status_1yr as
+select a.*, b.alco_status_dx_d, b.eventdate_d
+from alco_y_status_1yr a left join alco_d_1yr b
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_noalc_dx_xb4index;
+set g.bpd_cohort_new_nonalco_dx;
+if index_date<eventdate<=index_date+365;
+run; 
+
+data alco_y_d_status_1yr;
+set alco_y_d_status_1yr;
+if alco_status^=' ' && (alco_status_dx_y_1yr=' ' && alco_status_dx_d=' ') then alco_2=alco_status;
+else if alco_status=' ' && (alco_status_dx_y_1yr^=' ' && alco_status_dx_d=' ') then alco_2=alco_status_dx_y_1yr;
+else if alco_status=' ' && (alco_status_dx_y_1yr=' ' && alco_status_dx_d^=' ') then alco_2=alco_status_dx_d;
+else if alco_status^=' ' && alco_status_dx_y_1yr^=' ' && alco_status=alco_status_dx_y_1yr then alco_2=alco_status;
+else if alco_status^=' ' && alco_status_dx_y_1yr^=' ' && alco_status^=alco_status_dx_y_1yr && dxdate<=eventdate_y_1yr then alco_2=alco_status;
+else if alco_status^=' ' && alco_status_dx_y_1yr^=' ' && alco_status^=alco_status_dx_y_1yr && dxdate>eventdate_y_1yr then alco_2=alco_status_dx_y_1yr;
+else if alco_status^=' ' && alco_status_dx_d^=' ' && alco_status=alco_status_dx_d then alco_2=alco_status;
+else if alco_status^=' ' && alco_status_dx_d^=' ' && alco_status^=alco_status_dx_d && dxdate<=eventdate_d then alco_2=alco_status;
+else if alco_status^=' ' && alco_status_dx_d^=' ' && alco_status^=alco_status_dx_d && dxdate>eventdate_d then alco_2=alco_status_dx_d;
+run;
+
+data alco_y_d_status_1yr;
+set alco_y_d_status_1yr;
+if alco_2=' ' then alco_2='U';
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+drop alco_2 alco_f;
+run;
+
+proc sql;
+create table bpd_cohort_covar as
+select a.*, b.alco_2 
+from g.bpd_cohort_covar a left join alco_y_d_status_1yr b
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+if alco_1='U' && alco_2=' ' then alco_f='U';
+else if alco_1^='U' then alco_f=alco_1;
+else if alco_1='U' && alco_2^=' ' then alco_f=alco_2;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if bmi_f=4 then bmi_impu=1;
+else bmi_impu=bmi_f;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if alco_f='U' then alco_impu='N';
+else alco_impu=alco_f;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if smoke_f='U' then smoke_impu='N';
+else smoke_impu=smoke_f;
+run;
+
+
+/**** PPI use*****/;
+
+proc sql;
+create table f.bpd_rx_ppi as
+select * from f.bpd_cohort_all_rx 
+where drugcode in (select drugcode from f.drugcode_ppi);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_ppi_rx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_rx_ppi a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit;
+
+data g.bpd_cohort_new_ppi_rx;
+set bpd_cohort_new_ppi_rx;
+run;
+
+data g.bpd_cohort_new_ppi_rx_b4_index;
+set g.bpd_cohort_new_ppi_rx;
+if index_date-90<=prscdate<=index_date;
+run;
+
+data g.bpd_cohort_new_ppi_rx_b4_index;
+set g.bpd_cohort_new_ppi_rx_b4_index;
+if prscdate=. then delete;
+run;
+
+data g.bpd_cohort_new_ppi_rx_b4_index;
+set g.bpd_cohort_new_ppi_rx_b4_index;
+rx_ppi=1;
+run;
+
+proc sort data=g.bpd_cohort_new_ppi_rx_b4_index nodupkeys out=ppi_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select rx_ppi from ppi_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if rx_ppi=. then rx_ppi=0;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if bmi_f=0 then bmi_f=5;
+run;
+
+proc freq data=g.bpd_cohort_covar;
+table bmi_f;
+run;
+
+/*************Propensity score fine stratification*****************/;
+data g.bpd_cohort_covar_li;
+set g.bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar_li;
+set g.bpd_cohort_covar_li;
+if substr(exposure_status,1,2) in ('li') then treatment=1;
+else treatment=0;
+run;
+
+data g.bpd_cohort_covar_li_ap;
+set g.bpd_cohort_covar;
+if substr(exposure_status,1,2) in ('li','ap');
+run;
+
+data g.bpd_cohort_covar_li_ap;
+set g.bpd_cohort_covar_li_ap;
+if substr(exposure_status,1,2) in ('li') then treatment=1;
+else treatment=0;
+run;
+
+data g.bpd_cohort_covar_li_ae;
+set g.bpd_cohort_covar;
+if substr(exposure_status,1,2) in ('li','ae');
+run;
+
+data g.bpd_cohort_covar_li_ae;
+set g.bpd_cohort_covar_li_ae;
+if substr(exposure_status,1,2) in ('li') then treatment=1;
+else treatment=0;
+run;
+
+/* Initiate the propensity score fine stratification macro*/;
+
+%include 'E:\BPD_UK_fracture\PSS weighted analysis.sas';
+%include 'E:\BPD_UK_fracture\Weighted Table 1s.sas';
+
+%fine_stratification 
+(in_data= g.bpd_cohort_covar_li, exposure= treatment, PS_provided= no , ps_var= ps, 
+ps_class_var_list=pracid sex index_year dx_ckd dx_asthma dx_copd hx_frac hx_fall dx_ra dx_thy rx_ras rx_bb dx_htn rx_ster dx_cld dx_t2dm dx_cvd dx_cere dx_rx_osteo rx_ad rx_seda_opi rx_hrt rx_ppi dx_epi bmi_impu smoke_impu alco_impu, 
+ps_cont_var_list=age_index,
+PSS_method=exposure, estimand= att, n_of_strata= 50, out_data=g.PS_FS_li_ps, 
+id_var= id, effect_estimate= hr, outcome= event, survival_time= fu_time, time_unit= days, out_excel=E:\BPD_UK_fracture\PSS analysis results\li_main_total_frac_HR);
+
+/*p-value generation*/
+proc phreg data=g.PS_FS_li_ps COVS (AGGREGATE);
+id id;
+model fu_time*event(0)=treatment /rl;
+freq psweight/notruncate;
+title "Cox model with robust standard error";
+run; 
+
+%fine_stratification 
+(in_data= g.bpd_cohort_covar_li_ap, exposure= treatment, PS_provided= no , ps_var= ps, 
+ps_class_var_list=pracid sex index_year dx_ckd dx_asthma dx_copd hx_frac hx_fall dx_ra dx_thy rx_ras rx_bb dx_htn rx_ster dx_cld dx_t2dm dx_cvd dx_cere dx_rx_osteo rx_ad rx_seda_opi rx_hrt rx_ppi dx_epi bmi_impu smoke_impu alco_impu, 
+ps_cont_var_list=age_index,
+PSS_method=exposure, estimand= att, n_of_strata= 50, out_data=g.PS_FS_li_ap_ps, 
+id_var= id, effect_estimate= hr, outcome= event, survival_time= fu_time, time_unit= days, out_excel=E:\BPD_UK_fracture\PSS analysis results\li_ap_main_total_frac_HR);
+
+/*p-value generation*/
+proc phreg data=g.PS_FS_li_ap_ps COVS (AGGREGATE);
+id id;
+model fu_time*event(0)=treatment /rl;
+freq psweight/notruncate;
+title "Cox model with robust standard error";
+run; 
+
+%fine_stratification 
+(in_data= g.bpd_cohort_covar_li_ae, exposure= treatment, PS_provided= no , ps_var= ps, 
+ps_class_var_list=pracid sex index_year dx_ckd dx_asthma dx_copd hx_frac hx_fall dx_ra dx_thy rx_ras rx_bb dx_htn rx_ster dx_cld dx_t2dm dx_cvd dx_cere dx_rx_osteo rx_ad rx_seda_opi rx_hrt rx_ppi dx_epi bmi_impu smoke_impu alco_impu, 
+ps_cont_var_list=age_index,
+PSS_method=exposure, estimand= att, n_of_strata= 50, out_data=g.PS_FS_li_ae_ps, 
+id_var= id, effect_estimate= hr, outcome= event, survival_time= fu_time, time_unit= days, out_excel=E:\BPD_UK_fracture\PSS analysis results\li_ae_main_total_frac_HR);
+
+/*p-value generation*/
+proc phreg data=g.PS_FS_li_ae_ps COVS (AGGREGATE);
+id id;
+model fu_time*event(0)=treatment /rl;
+freq psweight/notruncate;
+title "Cox model with robust standard error";
+run; 
+
+/*************stratified by sex*******************/;
+data g.bpd_cohort_covar_m;
+set g.bpd_cohort_covar;
+if substr(sex,1,1) in ('1');
+run;
+
+data g.bpd_cohort_covar_f;
+set g.bpd_cohort_covar;
+if substr(sex,1,1) in ('2');
+run;
+
+data g.bpd_cohort_covar_m_li;
+set g.bpd_cohort_covar_m;
+if substr(exposure_status,1,2) in ('li') then treatment=1;
+else treatment=0;
+run;
+
+data g.bpd_cohort_covar_f_li;
+set g.bpd_cohort_covar_f;
+if substr(exposure_status,1,2) in ('li') then treatment=1;
+else treatment=0;
+run;
+
+%fine_stratification 
+(in_data= g.bpd_cohort_covar_m_li, exposure= treatment, PS_provided= no , ps_var= ps, 
+ps_class_var_list=pracid index_year dx_ckd dx_asthma dx_copd hx_frac hx_fall dx_ra dx_thy rx_ras rx_bb dx_htn rx_ster dx_cld dx_t2dm dx_cvd dx_cere dx_rx_osteo rx_ad rx_seda_opi rx_hrt rx_ppi dx_epi bmi_impu smoke_impu alco_impu, 
+ps_cont_var_list=age_index,
+PSS_method=exposure, estimand= att, n_of_strata= 50, out_data=g.PS_FS_li_m_ps, 
+id_var= id, effect_estimate= hr, outcome= event, survival_time= fu_time, time_unit= days, out_excel=E:\BPD_UK_fracture\li_m_total_frac_HR);
+
+/*****P-value*****/;
+proc phreg data=g.PS_FS_li_m_ps COVS (AGGREGATE);
+class treatment (ref='0') pracid;
+model fu_time*event(0)=treatment pracid  /rl;
+weight psweight;
+title "Cox model with robust standard error";
+run; 
+
+%fine_stratification 
+(in_data= g.bpd_cohort_covar_f_li, exposure= treatment, PS_provided= no , ps_var= ps, 
+ps_class_var_list=pracid sex index_year dx_ckd dx_asthma dx_copd hx_frac hx_fall dx_ra dx_thy rx_ras rx_bb dx_htn rx_ster dx_cld dx_t2dm dx_cvd dx_cere dx_rx_osteo rx_ad rx_seda_opi rx_hrt rx_ppi dx_epi bmi_impu smoke_impu alco_impu, 
+ps_cont_var_list=age_index,
+PSS_method=exposure, estimand= att, n_of_strata= 50, out_data=g.PS_FS_li_f_ps, 
+id_var= id, effect_estimate= hr, outcome= event, survival_time= fu_time, time_unit= days, out_excel=E:\BPD_UK_fracture\li_f_total_frac_HR);
+
+/*****P-value*****/;
+proc phreg data=g.PS_FS_li_f_ps COVS (AGGREGATE);
+class treatment (ref='0') pracid;
+model fu_time*event(0)=treatment pracid  /rl;
+weight psweight;
+title "Cox model with robust standard error";
+run; 
+
+/****************stratified by history of fractures**************/;
+data g.bpd_cohort_covar_xfrac;
+set g.bpd_cohort_covar;
+if hx_frac=1 then delete;
+run;
+
+data g.bpd_cohort_covar_xfrac_li;
+set g.bpd_cohort_covar_xfrac;
+if substr(exposure_status,1,2) in ('li') then treatment=1;
+else treatment=0;
+run;
+
+%fine_stratification 
+(in_data= g.bpd_cohort_covar_xfrac_li, exposure= treatment, PS_provided= no , ps_var= ps, 
+ps_class_var_list=pracid sex index_year dx_ckd dx_asthma dx_copd hx_fall dx_ra dx_thy rx_ras rx_bb dx_htn rx_ster dx_cld dx_t2dm dx_cvd dx_cere dx_rx_osteo rx_ad rx_seda_opi rx_hrt rx_ppi dx_epi bmi_impu smoke_impu alco_impu, 
+ps_cont_var_list=age_index,
+PSS_method=exposure, estimand= att, n_of_strata= 50, out_data=g.PS_FS_li_xfrac_ps, 
+id_var= id, effect_estimate= hr, outcome= event, survival_time= fu_time, time_unit= days, out_excel=E:\BPD_UK_fracture\li_xfrac_total_frac_HR);
+
+/*****P-value*****/;
+proc phreg data=g.PS_FS_li_xfrac_ps COVS (AGGREGATE);
+id id;
+model fu_time*event(0)=treatment /rl;
+freq psweight/notruncate;
+title "Cox model with robust standard error";
+run; 
+
+data g.bpd_cohort_covar_frac;
+set g.bpd_cohort_covar;
+if hx_frac=1;
+run;
+
+data g.bpd_cohort_covar_frac_li;
+set g.bpd_cohort_covar_frac;
+if substr(exposure_status,1,2) in ('li') then treatment=1;
+else treatment=0;
+run;
+
+%fine_stratification 
+(in_data= g.bpd_cohort_covar_frac_li, exposure= treatment, PS_provided= no , ps_var= ps, 
+ps_class_var_list=pracid sex index_year dx_ckd dx_asthma dx_copd hx_fall dx_ra dx_thy rx_ras rx_bb dx_htn rx_ster dx_cld dx_t2dm dx_cvd dx_cere dx_rx_osteo rx_ad rx_seda_opi rx_hrt rx_ppi dx_epi bmi_impu smoke_impu alco_impu, 
+ps_cont_var_list=age_index,
+PSS_method=exposure, estimand= att, n_of_strata= 50, out_data=g.PS_FS_li_frac_ps, 
+id_var= id, effect_estimate= hr, outcome= event, survival_time= fu_time, time_unit= days, out_excel=E:\BPD_UK_fracture\li_frac_total_frac_HR);
+
+/*****P-value*****/;
+proc phreg data=g.PS_FS_li_frac_ps COVS (AGGREGATE);
+class treatment (ref='0')pracid index_year ;
+model fu_time*event(0)=treatment pracid index_year/rl;
+weight psweight;
+title "Cox model with robust standard error";
+run; 
+
+/*************sensitivity analysis: ITT*******************/;
+data g.bpd_cohort_covar_itt;
+set g.bpd_cohort_covar;
+rc_date_itt=min(xferdate,deathdate,study_end,first_event);
+format rc_date_itt date9.;
+run;
+
+data g.bpd_cohort_covar_itt;
+set g.bpd_cohort_covar_itt;
+if rc_date_itt=first_event then event_itt=1;
+else event_itt=0;
+run;
+
+data g.bpd_cohort_covar_itt;
+set g.bpd_cohort_covar_itt;
+fu_time_itt=rc_date_itt-index_date+1;
+run;
+
+data g.bpd_cohort_covar_itt_li;
+set g.bpd_cohort_covar_itt;
+if substr(exposure_status,1,2) in ('li') then treatment=1;
+else treatment=0;
+run;
+
+%fine_stratification 
+(in_data= g.bpd_cohort_covar_itt_li, exposure= treatment, PS_provided= no , ps_var= ps, 
+ps_class_var_list=pracid sex index_year dx_ckd dx_asthma dx_copd hx_frac hx_fall dx_ra dx_thy rx_ras rx_bb dx_htn rx_ster dx_cld dx_t2dm dx_cvd dx_cere dx_rx_osteo rx_ad rx_seda_opi rx_hrt rx_ppi dx_epi bmi_impu smoke_impu alco_impu, 
+ps_cont_var_list=age_index,
+PSS_method=exposure, estimand= att, n_of_strata= 50, out_data=g.PS_FS_li_itt_ps, 
+id_var= id, effect_estimate= hr, outcome= event_itt, survival_time= fu_time_itt, time_unit= days, out_excel=E:\BPD_UK_fracture\li_itt_total_frac_HR);
+
+proc phreg data=g.PS_FS_li_itt_ps COVS (AGGREGATE);
+id id;
+model fu_time_itt*event_itt(0)=treatment /rl /*ties=efron*/;
+freq psweight/notruncate;
+title "Cox model with robust standard error";
+run;
+
+/*******************sensitivity analysis: maintenance treatment***************/;
+/*******only include patients with >=2 consecutive rx of treatment of duration>=56 days*********/;
+
+/*lithium*/
+data g.bpd_cohort_ms_xmulti_heads_tf;
+set f.bpd_cohort_ms_xmulti_heads_tf;
+run;
+
+data g.li_index_new;
+set g.bpd_cohort_ms_xmulti_heads_tf;
+if exposure_status='li';
+run; 
+
+proc sql;
+create table g.bpd_cohort_li_rx_9319_new as
+select * from f.bpd_cohort_li_rx_9319_new
+where id in (select id from g.li_index_new);
+quit;
+
+proc sort data=g.bpd_cohort_li_rx_9319_new nodupkeys;
+by id prscdate prscend;
+run;
+
+data g.bpd_cohort_li_rx_9319_new;
+set g.bpd_cohort_li_rx_9319_new;
+prscend_3m_xol=prscend+84;
+format prscend_3m_xol date9.;
+run;
+
+data g.bpd_cohort_li_rx_9319_new;
+set g.bpd_cohort_li_rx_9319_new;
+prscend_3m_lag=lag(prscend_3m_xol);
+format prscend_3m_lag date9.;
+run;
+
+data g.bpd_cohort_li_rx_9319_new;
+set g.bpd_cohort_li_rx_9319_new;
+by id;
+if first.id then prscend_3m_lag=.;
+run;
+
+data g.bpd_cohort_li_rx_9319_new;
+set g.bpd_cohort_li_rx_9319_new;
+by id;
+if first.id then dur_cum=dur_ceil;
+else dur_cum+dur_ceil;
+run;
+
+data g.bpd_cohort_li_rx_9319_new;
+set g.bpd_cohort_li_rx_9319_new;
+by id;
+if first.id then n_rxst=1;
+else n_rxst+1;
+run;
+
+proc sort data=g.bpd_cohort_li_rx_9319_new;
+by id n_rxst;
+run;
+
+proc sql;
+create table bpd_cohort_li_rx_9319_new as
+select *, max(n_rxst) as max_n_rxst 
+from g.bpd_cohort_li_rx_9319_new
+group by id
+having max(n_rxst)= max_n_rxst;
+quit;
+
+data g.bpd_cohort_li_rx_9319_new;
+set bpd_cohort_li_rx_9319_new;
+run;
+
+data g.bpd_cohort_li_rx_9319_new;
+set g.bpd_cohort_li_rx_9319_new;
+dur_ceil_lag=lag(dur_ceil);
+run;
+
+data g.bpd_cohort_li_rx_9319_new;
+set g.bpd_cohort_li_rx_9319_new;
+by id;
+if first.id then dur_ceil_lag=.;
+run;
+
+data g.bpd_cohort_li_rx_9319_main_1;
+set g.bpd_cohort_li_rx_9319_new;
+if max_n_rxst>2;
+run; 
+
+data g.main_li_1;
+set g.bpd_cohort_li_rx_9319_main_1;
+consecutive=(prscdate<=prscend_3m_lag && dur_ceil>=28 && dur_ceil_lag>=28);
+run;
+
+data g.main_li_1_3rx_28d;
+do _count=1 by 1 until (last. consecutive);
+set g.main_li_1;
+by id consecutive notsorted;
+end;
+do until (last.consecutive);
+    set g.main_li_1;
+    by id consecutive notsorted;
+    if _count>=1 and consecutive=1 then output;
+  end;
+run;
+
+data g.bpd_cohort_li_rx_9319_main_2;
+set g.bpd_cohort_li_rx_9319_new;
+if max_n_rxst=2;
+run; 
+
+data g.acute_li_2rx_1;
+set g.bpd_cohort_li_rx_9319_main_2;
+if n_rxst=1 && dur_ceil<28;
+run;
+
+data g.acute_li_2rx_2;
+set g.bpd_cohort_li_rx_9319_main_2;
+if n_rxst=2 && dur_ceil<28;
+run;
+
+data g.acute_li_2rx_3;
+set g.bpd_cohort_li_rx_9319_main_2;
+if n_rxst=2 && prscdate>prscend_3m_lag;
+run;
+
+data g.acute_li_2rx_id;
+set g.acute_li_2rx_3 g.acute_li_2rx_2 g.acute_li_2rx_1;
+run; 
+
+proc sort data=g.acute_li_2rx_id nodupkeys;
+by id;
+run;
+
+proc sql;
+create table g.bpd_cohort_li_rx_9319_main_2rx as
+select * from g.bpd_cohort_li_rx_9319_main_2
+where id not in (select id from g.acute_li_2rx_id);
+quit;
+
+data g.main_li_id;
+set g.bpd_cohort_li_rx_9319_main_2rx g.main_li_1_3rx_28d;
+run;
+
+proc sort data=g.main_li_id nodupkeys;
+by id;
+run; 
+
+/*antipsychotics*/
+
+data g.ap_index_new;
+set g.bpd_cohort_ms_xmulti_heads_tf;
+if exposure_status='ap';
+run; 
+
+proc sql;
+create table g.bpd_cohort_ap_rx_9319_new as
+select * from f.bpd_cohort_ap_rx_9319_new
+where id in (select id from g.ap_index_new);
+quit;
+
+proc sort data=g.bpd_cohort_ap_rx_9319_new nodupkeys;
+by id prscdate prscend;
+run;
+
+data g.bpd_cohort_ap_rx_9319_new;
+set g.bpd_cohort_ap_rx_9319_new;
+prscend_3m_xol=prscend+84;
+format prscend_3m_xol date9.;
+run;
+
+data g.bpd_cohort_ap_rx_9319_new;
+set g.bpd_cohort_ap_rx_9319_new;
+prscend_3m_lag=lag(prscend_3m_xol);
+format prscend_3m_lag date9.;
+run;
+
+data g.bpd_cohort_ap_rx_9319_new;
+set g.bpd_cohort_ap_rx_9319_new;
+by id;
+if first.id then prscend_3m_lag=.;
+run;
+
+data g.bpd_cohort_ap_rx_9319_new;
+set g.bpd_cohort_ap_rx_9319_new;
+by id;
+if first.id then dur_cum=dur_ceil;
+else dur_cum+dur_ceil;
+run;
+
+data g.bpd_cohort_ap_rx_9319_new;
+set g.bpd_cohort_ap_rx_9319_new;
+by id;
+if first.id then n_rxst=1;
+else n_rxst+1;
+run;
+
+proc sort data=g.bpd_cohort_ap_rx_9319_new;
+by id n_rxst;
+run;
+
+proc sql;
+create table bpd_cohort_ap_rx_9319_new as
+select *, max(n_rxst) as max_n_rxst 
+from g.bpd_cohort_ap_rx_9319_new
+group by id
+having max(n_rxst)= max_n_rxst;
+quit;
+
+data g.bpd_cohort_ap_rx_9319_new;
+set bpd_cohort_ap_rx_9319_new;
+run;
+
+data g.bpd_cohort_ap_rx_9319_new;
+set g.bpd_cohort_ap_rx_9319_new;
+dur_ceil_lag=lag(dur_ceil);
+run;
+
+data g.bpd_cohort_ap_rx_9319_new;
+set g.bpd_cohort_ap_rx_9319_new;
+by id;
+if first.id then dur_ceil_lag=.;
+run;
+
+data g.bpd_cohort_ap_rx_9319_main_1;
+set g.bpd_cohort_ap_rx_9319_new;
+if max_n_rxst>2;
+run; 
+
+data g.main_ap_1;
+set g.bpd_cohort_ap_rx_9319_main_1;
+consecutive=(prscdate<=prscend_3m_lag && dur_ceil>=28 && dur_ceil_lag>=28);
+run;
+ 
+data g.main_ap_1_3rx_28d;
+do _count=1 by 1 until (last. consecutive);
+set g.main_ap_1;
+by id consecutive notsorted;
+end;
+do until (last.consecutive);
+    set g.main_ap_1;
+    by id consecutive notsorted;
+    if _count>=1 and consecutive=1 then output;
+  end;
+run;
+
+data g.bpd_cohort_ap_rx_9319_main_2;
+set g.bpd_cohort_ap_rx_9319_new;
+if max_n_rxst=2;
+run; 
+
+data g.acute_ap_2rx_1;
+set g.bpd_cohort_ap_rx_9319_main_2;
+if n_rxst=1 && dur_ceil<28;
+run; 
+
+data g.acute_ap_2rx_2;
+set g.bpd_cohort_ap_rx_9319_main_2;
+if n_rxst=2 && dur_ceil<28;
+run; 
+
+data g.acute_ap_2rx_3;
+set g.bpd_cohort_ap_rx_9319_main_2;
+if n_rxst=2 && prscdate>prscend_3m_lag;
+run;
+
+data g.acute_ap_2rx_id;
+set g.acute_ap_2rx_3 g.acute_ap_2rx_2 g.acute_ap_2rx_1;
+run; /*261*/
+
+proc sort data=g.acute_ap_2rx_id nodupkeys;
+by id;
+run; 
+
+proc sql;
+create table g.bpd_cohort_ap_rx_9319_main_2rx as
+select * from g.bpd_cohort_ap_rx_9319_main_2
+where id not in (select id from g.acute_ap_2rx_id);
+quit;
+
+data g.main_ap_id;
+set g.bpd_cohort_ap_rx_9319_main_2rx g.main_ap_1_3rx_28d;
+run;
+
+proc sort data=g.main_ap_id nodupkeys;
+by id;
+run; 
+
+/*antiepileptics*/
+
+data g.ae_index_new;
+set g.bpd_cohort_ms_xmulti_heads_tf;
+if exposure_status='ae';
+run; 
+
+proc sql;
+create table g.bpd_cohort_ae_rx_9319_new as
+select * from f.bpd_cohort_ae_rx_9319_new
+where id in (select id from g.ae_index_new);
+quit;
+
+proc sort data=g.bpd_cohort_ae_rx_9319_new nodupkeys;
+by id prscdate prscend;
+run;
+
+data g.bpd_cohort_ae_rx_9319_new;
+set g.bpd_cohort_ae_rx_9319_new;
+prscend_3m_xol=prscend+84;
+format prscend_3m_xol date9.;
+run;
+
+data g.bpd_cohort_ae_rx_9319_new;
+set g.bpd_cohort_ae_rx_9319_new;
+prscend_3m_lag=lag(prscend_3m_xol);
+format prscend_3m_lag date9.;
+run;
+
+data g.bpd_cohort_ae_rx_9319_new;
+set g.bpd_cohort_ae_rx_9319_new;
+by id;
+if first.id then prscend_3m_lag=.;
+run;
+
+data g.bpd_cohort_ae_rx_9319_new;
+set g.bpd_cohort_ae_rx_9319_new;
+by id;
+if first.id then dur_cum=dur_ceil;
+else dur_cum+dur_ceil;
+run;
+
+data g.bpd_cohort_ae_rx_9319_new;
+set g.bpd_cohort_ae_rx_9319_new;
+by id;
+if first.id then n_rxst=1;
+else n_rxst+1;
+run;
+
+proc sort data=g.bpd_cohort_ae_rx_9319_new;
+by id n_rxst;
+run;
+
+proc sql;
+create table bpd_cohort_ae_rx_9319_new as
+select *, max(n_rxst) as max_n_rxst 
+from g.bpd_cohort_ae_rx_9319_new
+group by id
+having max(n_rxst)= max_n_rxst;
+quit;
+
+data g.bpd_cohort_ae_rx_9319_new;
+set bpd_cohort_ae_rx_9319_new;
+run;
+
+data g.bpd_cohort_ae_rx_9319_new;
+set g.bpd_cohort_ae_rx_9319_new;
+dur_ceil_lag=lag(dur_ceil);
+run;
+
+data g.bpd_cohort_ae_rx_9319_new;
+set g.bpd_cohort_ae_rx_9319_new;
+by id;
+if first.id then dur_ceil_lag=.;
+run;
+
+data g.bpd_cohort_ae_rx_9319_main_1;
+set g.bpd_cohort_ae_rx_9319_new;
+if max_n_rxst>2;
+run; 
+
+data g.main_ae_1;
+set g.bpd_cohort_ae_rx_9319_main_1;
+consecutive=(prscdate<=prscend_3m_lag && dur_ceil>=28 && dur_ceil_lag>=28);
+run;
+
+data g.main_ae_1_3rx_28d;
+do _count=1 by 1 until (last. consecutive);
+set g.main_ae_1;
+by id consecutive notsorted;
+end;
+do until (last.consecutive);
+    set g.main_ae_1;
+    by id consecutive notsorted;
+    if _count>=1 and consecutive=1 then output;
+  end;
+run;
+
+data g.bpd_cohort_ae_rx_9319_main_2;
+set g.bpd_cohort_ae_rx_9319_new;
+if max_n_rxst=2;
+run; 
+
+data g.acute_ae_2rx_1;
+set g.bpd_cohort_ae_rx_9319_main_2;
+if n_rxst=1 && dur_ceil<28;
+run; 
+
+data g.acute_ae_2rx_2;
+set g.bpd_cohort_ae_rx_9319_main_2;
+if n_rxst=2 && dur_ceil<28;
+run; 
+
+data g.acute_ae_2rx_3;
+set g.bpd_cohort_ae_rx_9319_main_2;
+if n_rxst=2 && prscdate>prscend_3m_lag;
+run;
+
+data g.acute_ae_2rx_id;
+set g.acute_ae_2rx_3 g.acute_ae_2rx_2 g.acute_ae_2rx_1;
+run; 
+
+proc sort data=g.acute_ae_2rx_id nodupkeys;
+by id;
+run; 
+
+proc sql;
+create table g.bpd_cohort_ae_rx_9319_main_2rx as
+select * from g.bpd_cohort_ae_rx_9319_main_2
+where id not in (select id from g.acute_ae_2rx_id);
+quit;
+
+data g.main_ae_id;
+set g.bpd_cohort_ae_rx_9319_main_2rx g.main_ae_1_3rx_28d;
+run;
+
+proc sort data=g.main_ae_id nodupkeys;
+by id;
+run; 
+
+/*******total no of individuals********/;
+data g.main_id;
+set g.main_ae_id g.main_ap_id g.main_li_id;
+run; 
+
+proc sql;
+create table g.bpd_cohort_ms_xmulti_heads_main as
+select * from g.bpd_cohort_ms_xmulti_heads_tf
+where id in (select id from g.main_id);
+quit; 
+
+/******covariates******/;
+proc sql;
+create table g.bpd_cohort_covar_main as
+select * from g.bpd_cohort_covar
+where id in (select id from g.bpd_cohort_ms_xmulti_heads_main);
+quit;
+
+data g.bpd_cohort_covar_main_li;
+set g.bpd_cohort_covar_main;
+if substr(exposure_status,1,2) in ('li') then treatment=1;
+else treatment=0;
+run;
+
+%fine_stratification
+(in_data= g.bpd_cohort_covar_main_li, exposure= treatment, PS_provided= no , ps_var= ps, 
+ps_class_var_list=pracid sex index_year dx_ckd dx_asthma dx_copd hx_frac hx_fall dx_ra dx_thy rx_ras rx_bb dx_htn rx_ster dx_cld dx_t2dm dx_cvd dx_cere dx_rx_osteo rx_ad rx_seda_opi rx_hrt rx_ppi dx_epi bmi_impu smoke_impu alco_impu, 
+ps_cont_var_list=age_index,
+PSS_method=exposure, estimand= att, n_of_strata= 50, out_data=g.PS_FS_li_main_ps, 
+id_var= id, effect_estimate= hr, outcome= event, survival_time= fu_time, time_unit= days, out_excel=E:\BPD_UK_fracture\li_main_total_frac_HR);
+
+/****P-value generation*****/;
+proc phreg data=g.PS_FS_li_main_ps COVS (AGGREGATE);
+id id;
+model fu_time*event(0)=treatment /rl;
+freq psweight/notruncate;
+title "Cox model with robust standard error";
+run; 
+
+
+
+
+
+
+
+
+
