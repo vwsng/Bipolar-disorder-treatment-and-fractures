@@ -6,7 +6,7 @@ libname f "E:\BPD_UK_fracture\Analysis";
     4.bpd_all_dx_raw 
     5.bpd_all_rx_raw *********/;
 
-/**********step 2: map the description of readcodes and drugcodes*********/;
+/**********step 2: tidy up the date format*********/;
 
 proc sql;
 create table bpd_cohort_demo as
@@ -27,19 +27,6 @@ run;
 
 proc sort data=f.bpd_cohort;
 by id;
-run;
-
-data f.bpd_cohort_demo;
-set f.bpd_cohort_demo;
-regdate1=input(regdate,yymmdd10.);
-xferdate1=input(xferdate,yymmdd10.);
-deathdate1=input(deathdate,yymmdd10.);
-compdate1=input(compdate,ddmmyy10.);
-visiondate1=input(visiondate,ddmmyy10.);
-amr1=input(amr,ddmmyy10.);
-sysdate1=input(sysdate,yymmdd10.);
-collectdate1=input(collectdate,ddmmyy10.);
-format regdate1 xferdate1 deathdate1 compdate1 visiondate1 amr1 sysdate1 collectdate1 date9.;
 run;
 
 data f.bpd_cohort_demo;
@@ -72,14 +59,6 @@ run;
 data f.bpd_cohort_demo;
 set f.bpd_cohort_demo;
 drop VAR1;
-run;
-
-data f.bpd_cohort_demo;
-set f.bpd_cohort_demo;
-lc1=regdate;
-lc2=max(regdate,compdate,amr);
-lc3=max(regdate,compdate,amr,visiondate);
-format lc1 lc2 lc3 date9.;
 run;
 
 data f.bpd_all_dx;
@@ -150,7 +129,7 @@ run;
 
 proc sql;
 create table bpd_all_rx as
-select a.*, b.patflag, b.yob1, b.famnum, b.sex, b.regdate, b.regstat, b.xferdate, b.regrea, b.deathdate, b.deathinfo, b.accept, b.institute, b.marital, b.dispensing, b.prscexempt, b.sysdate, b.compdate, b.visiondate, b.amr, b.collectdate, b.country, b.dataflag, b.status, b.lc1, b.lc2,b.lc3
+select a.*, b.patflag, b.yob1, b.famnum, b.sex, b.regdate, b.regstat, b.xferdate, b.regrea, b.deathdate, b.deathinfo, b.accept, b.institute, b.marital, b.dispensing, b.prscexempt, b.sysdate, b.compdate, b.visiondate, b.amr, b.collectdate, b.country, b.dataflag, b.status,
 from f.bpd_all_rx a, f.bpd_cohort_demo b 
 where a.id=b.id;
 quit;
@@ -189,7 +168,7 @@ proc sort data=f.bpd_cohort_9319 nodupkeys out=f.bpd_cohort_9319_h;
 by id;
 run;
 
-/******1. exlcusion criteria: schizophrenia dx after the latest bipolar disorder dx******/;
+/******exlcusion criteria: schizophrenia dx after the latest bipolar disorder dx******/;
 
 proc sql;
 create table f.bpd_cohort_scz_dx as
@@ -236,7 +215,7 @@ proc sort data=f.bpd_cohort_clean nodupkeys out=f.bpd_cohort_head;
 by id;
 run; 
 
-/*******2. exclusion criteria: age<18*********/;
+/*******exclusion criteria: age<18*********/;
 data f.bpd_cohort_head;
 set f.bpd_cohort_head;
 age=year(dxdate)-yob1;
@@ -714,7 +693,7 @@ quit;
 
 proc sort data=f.bpd_cohort_ae_rx_9319_new nodupkeys out=f.ae_heads;
 by id;
-run; /*7748*/
+run; 
 
 data f.ae_cohort_new;
 format id blockseq lag_max_rxend prscdate prscend;
@@ -836,7 +815,7 @@ set li_ap_ae;
 if (index_date_li^=. && index_date_li=index_date_ap) or (index_date_li^=. && index_date_li=index_date_ae) or (index_date_ap^=. && index_date_ap=index_date_ae)then delete;
 run; 
 
-/********remove people with multiple exposure at the start of follow-up********/;
+/********exclusion criteria: people with multiple exposure at the start of follow-up********/;
 proc sql;
 create table f.bpd_cohort_ms_xmulti_heads_new as
 select * from f.bpd_cohort_ms_heads_new 
@@ -1919,6 +1898,12 @@ set g.bpd_cohort_covar;
 if rx_arb=. then rx_arb=0;
 run;
 
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if rx_acei=1 or rx_arb=1 then rx_ras=1;
+else rx_ras=0;
+run;
+
 proc sql;
 create table f.bpd_cohort_new_bb_rx as
 select * from f.bpd_cohort_all_rx 
@@ -2127,7 +2112,7 @@ proc sql;
 create table f.bpd_dx_cere as
 select * from f.bpd_cohort_all_dx_new 
 where medcode in (select medcode from f.readcode_cerevas);
-quit; /*3342*/
+quit; 
 
 proc sql;
 create table bpd_cohort_new_cere_dx as 
@@ -2268,57 +2253,6 @@ if dx_rx_osteo=. then dx_rx_osteo=0;
 run;
 
 proc sql;
-create table f.bpd_rx_ssri_tca as
-select * from f.bpd_cohort_all_rx 
-where drugcode in (select drugcode from f.drugcode_ssri_tca);
-quit; 
-
-proc sql;
-create table bpd_cohort_new_ad_rx as 
-select a.*, b.lc, b.index_date, b.exposure_status
-from f.bpd_rx_ssri_tca a,f.bpd_cohort_ms_xmulti_heads_tf b  
-where a.id=b.id;
-quit;
-
-data g.bpd_cohort_new_ssri_tca_rx;
-set bpd_cohort_new_ad_rx;
-run; 
-
-data g.bpd_cohort_new_ssri_rx_b4_index;
-set g.bpd_cohort_new_ssri_tca_rx;
-if index_date-90<=prscdate<=index_date;
-run;
-
-data g.bpd_cohort_new_ssri_rx_b4_index;
-set g.bpd_cohort_new_ssri_rx_b4_index;
-if prscdate=. then delete;
-run;
-
-data g.bpd_cohort_new_ssri_rx_b4_index;
-set g.bpd_cohort_new_ssri_rx_b4_index;
-rx_ssri=1;
-run;
-
-proc sort data=g.bpd_cohort_new_ssri_rx_b4_index nodupkeys out=ssri_tca_id;
-by id;
-run;
-
-proc sql;
-create table bpd_cohort_covar as
-select * from g.bpd_cohort_covar as a left join (select rx_ssri from ssri_tca_id as b)
-on a.id=b.id;
-quit;
-
-data g.bpd_cohort_covar;
-set bpd_cohort_covar;
-run;
-
-data g.bpd_cohort_covar;
-set g.bpd_cohort_covar;
-if rx_ssri=. then rx_ssri=0;
-run;
-
-proc sql;
 create table f.bpd_rx_ad as
 select * from f.bpd_cohort_all_rx 
 where drugcode in (select drugcode from f.drugcode_ad);
@@ -2370,57 +2304,6 @@ if rx_ad=. then rx_ad=0;
 run;
 
 proc sql;
-create table f.bpd_dx_hypercal as
-select * from f.bpd_cohort_all_dx_new 
-where medcode in (select medcode from f.readcode_hypercal);
-quit;
-
-proc sql;
-create table bpd_cohort_new_hypercal_dx as 
-select a.*, b.lc, b.index_date, b.exposure_status
-from f.bpd_dx_hypercal a,f.bpd_cohort_ms_xmulti_heads_tf b  
-where a.id=b.id;
-quit;
-
-data g.bpd_cohort_new_hypercal_dx;
-set bpd_cohort_new_hypercal_dx;
-run;
-
-data g.bpd_cohort_new_ca_dx_b4_index;
-set g.bpd_cohort_new_hypercal_dx;
-if eventdate<=index_date;
-run; 
-
-data g.bpd_cohort_new_ca_dx_b4_index;
-set g.bpd_cohort_new_ca_dx_b4_index;
-if eventdate=. then delete;
-run;
-
-data g.bpd_cohort_new_ca_dx_b4_index;
-set g.bpd_cohort_new_ca_dx_b4_index;
-dx_ca=1;
-run;
-
-proc sort data=g.bpd_cohort_new_ca_dx_b4_index nodupkeys out=ca_id;
-by id;
-run; 
-
-proc sql;
-create table bpd_cohort_covar as
-select * from g.bpd_cohort_covar as a left join (select dx_ca from ca_id as b)
-on a.id=b.id;
-quit;
-
-data g.bpd_cohort_covar;
-set bpd_cohort_covar;
-run;
-
-data g.bpd_cohort_covar;
-set g.bpd_cohort_covar;
-if dx_ca=. then dx_ca=0;
-run;
-
-proc sql;
 create table f.bpd_dx_epilepsy as
 select * from f.bpd_cohort_all_dx_new 
 where medcode in (select medcode from f.readcode_epilepsy);
@@ -2469,58 +2352,6 @@ run;
 data g.bpd_cohort_covar;
 set g.bpd_cohort_covar;
 if dx_epilepsy=. then dx_epilepsy=0;
-run;
-
-proc sql;
-create table f.bpd_rx_hrt as
-select * from f.bpd_cohort_all_rx 
-where drugcode in (select drugcode from f.drugcode_hrt);
-quit; 
-
-proc sql;
-create table bpd_cohort_new_hrt_rx as 
-select a.*, b.lc, b.index_date, b.exposure_status
-from f.bpd_rx_hrt a,f.bpd_cohort_ms_xmulti_heads_tf b  
-where a.id=b.id;
-quit; 
-
-data g.bpd_cohort_new_hrt_rx;
-set bpd_cohort_new_hrt_rx;
-run;
-
-data g.bpd_cohort_new_hrt_rx_b4_index;
-set g.bpd_cohort_new_hrt_rx;
-if index_date-90<=prscdate<=index_date;
-run;
-
-data g.bpd_cohort_new_hrt_rx_b4_index;
-set g.bpd_cohort_new_hrt_rx_b4_index;
-if prscdate=. then delete;
-run;
-
-data g.bpd_cohort_new_hrt_rx_b4_index;
-set g.bpd_cohort_new_hrt_rx_b4_index;
-rx_hrt=1;
-run;
-
-proc sort data=g.bpd_cohort_new_hrt_rx_b4_index nodupkeys out=hrt_id;
-by id;
-run; 
-
-proc sql;
-create table bpd_cohort_covar as
-select * from g.bpd_cohort_covar as a left join (select rx_hrt from hrt_id as b)
-on a.id=b.id;
-quit;
-
-data g.bpd_cohort_covar;
-set bpd_cohort_covar;
-run;
-
-
-data g.bpd_cohort_covar;
-set g.bpd_cohort_covar;
-if rx_hrt=. then rx_hrt=0;
 run;
 
 proc sql;
@@ -2578,6 +2409,57 @@ data g.bpd_cohort_covar;
 set g.bpd_cohort_covar;
 if dx_epilepsy=1 or rx_ae=1 then dx_epi=1;
 else dx_epi=0;
+run;
+
+proc sql;
+create table f.bpd_rx_hrt as
+select * from f.bpd_cohort_all_rx 
+where drugcode in (select drugcode from f.drugcode_hrt);
+quit; 
+
+proc sql;
+create table bpd_cohort_new_hrt_rx as 
+select a.*, b.lc, b.index_date, b.exposure_status
+from f.bpd_rx_hrt a,f.bpd_cohort_ms_xmulti_heads_tf b  
+where a.id=b.id;
+quit; 
+
+data g.bpd_cohort_new_hrt_rx;
+set bpd_cohort_new_hrt_rx;
+run;
+
+data g.bpd_cohort_new_hrt_rx_b4_index;
+set g.bpd_cohort_new_hrt_rx;
+if index_date-90<=prscdate<=index_date;
+run;
+
+data g.bpd_cohort_new_hrt_rx_b4_index;
+set g.bpd_cohort_new_hrt_rx_b4_index;
+if prscdate=. then delete;
+run;
+
+data g.bpd_cohort_new_hrt_rx_b4_index;
+set g.bpd_cohort_new_hrt_rx_b4_index;
+rx_hrt=1;
+run;
+
+proc sort data=g.bpd_cohort_new_hrt_rx_b4_index nodupkeys out=hrt_id;
+by id;
+run; 
+
+proc sql;
+create table bpd_cohort_covar as
+select * from g.bpd_cohort_covar as a left join (select rx_hrt from hrt_id as b)
+on a.id=b.id;
+quit;
+
+data g.bpd_cohort_covar;
+set bpd_cohort_covar;
+run;
+
+data g.bpd_cohort_covar;
+set g.bpd_cohort_covar;
+if rx_hrt=. then rx_hrt=0;
 run;
 
 data g.bpd_cohort_covar;
@@ -2643,11 +2525,6 @@ if rx_seda=1 or rx_opi=1 then rx_seda_opi=1;
 else rx_seda_opi=0;
 run;
 
-data g.bpd_cohort_covar;
-set g.bpd_cohort_covar;
-if rx_acei=1 or rx_arb=1 then rx_ras=1;
-else rx_ras=0;
-run;
 
 
 /*bmi*/
